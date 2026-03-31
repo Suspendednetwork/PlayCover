@@ -68,6 +68,40 @@
 "preferences.popover.checking" = "Checking URL";
 "preferences.textfield.url" = "Source URL...";
 "preferences.tab.install" = "Install";
+"preferences.tab.vpn" = "VPN";
+
+// VPN – tab, buttons, states
+"vpn.button.import" = "Import Config…";
+"vpn.button.delete" = "Remove Profile";
+"vpn.button.connect" = "Connect";
+"vpn.button.disconnect" = "Disconnect";
+"vpn.button.viewLog" = "View Log";
+
+"vpn.state.disconnected" = "Not connected";
+"vpn.state.connecting" = "Connecting…";
+"vpn.state.connected" = "Connected";
+"vpn.state.disconnecting" = "Disconnecting…";
+"vpn.state.failed" = "Failed: %@";
+
+"vpn.import.title" = "Import %@ Config";
+"vpn.import.name" = "Profile name";
+"vpn.import.namePlaceholder" = "My VPN";
+"vpn.import.file" = "Config file";
+"vpn.import.noFile" = "No file selected";
+"vpn.import.browse" = "Choose…";
+
+"vpn.delete.confirm" = "Remove VPN profile "%@"?";
+
+"vpn.log.title" = "VPN Connection Log";
+"vpn.log.empty" = "No log output yet.";
+
+"vpn.error.emptyName" = "Profile name must not be empty.";
+"vpn.error.configNotFound" = "Config file not found for this profile.";
+"vpn.error.wgNotFound" = "wg-quick not found. Install WireGuard via Homebrew: brew install wireguard-tools";
+"vpn.error.ovpnNotFound" = "openvpn not found. Install OpenVPN via Homebrew: brew install openvpn";
+"vpn.error.authFailed" = "Authentication failed. Check your credentials.";
+"vpn.error.tlsFailed" = "TLS handshake failed. Check your server configuration.";
+"vpn.error.timeout" = "Connection timed out after 60 seconds.";
 "preferences.toggle.showInstallPopup" = "Show install PlayTools popup";
 "preferences.toggle.alwaysInstallPlayTools" = "Always install PlayTools";
 "preferences.toggle.showAppStorePopup" = "Show an alert if the application has an official AppStore version";
