@@ -85,6 +85,61 @@ To uninstall:
 
 
 
+<!-- VPN SUPPORT -->
+## VPN Support
+
+PlayCover includes a built-in VPN manager for **WireGuard** and **OpenVPN** profiles.
+Access it via **Settings → VPN**.
+
+### Prerequisites
+
+The VPN feature shells out to standard CLI tools.  
+Install them with [Homebrew](https://brew.sh) before connecting:
+
+| Protocol  | Homebrew package         | Installs binary              |
+|-----------|--------------------------|------------------------------|
+| WireGuard | `brew install wireguard-tools` | `/opt/homebrew/bin/wg-quick` |
+| OpenVPN   | `brew install openvpn`   | `/opt/homebrew/bin/openvpn`  |
+
+> **macOS permission:** Both tools require administrator privileges to create network
+> interfaces. PlayCover will show a standard macOS authentication dialog when you connect.
+
+### Adding a VPN profile
+
+1. Open **Settings → VPN**.  
+2. Click **Import Config…** and choose the protocol.  
+3. Select your `.conf` (WireGuard) or `.ovpn` (OpenVPN) file.  
+4. Optionally enter a custom profile name, then click **OK**.
+
+Config files are copied to  
+`~/Library/Containers/io.playcover.PlayCover/VPN/`  
+with owner-read-only permissions (`0600`).
+
+### Connecting & disconnecting
+
+Select a profile and click **Connect**.  
+An authentication dialog will appear asking for your macOS password.  
+The status indicator in the status bar turns **green** when the tunnel is up.  
+Click **Disconnect** to bring the tunnel down.
+
+### Viewing the connection log
+
+Click **View Log** to inspect live output from the VPN process.
+This is useful for diagnosing authentication or TLS errors.
+
+### Known limitations
+
+* **Apple Silicon only** – same requirement as PlayCover itself.
+* WireGuard and OpenVPN are not bundled; they must be installed separately.
+* A system-wide admin password prompt appears on every connect/disconnect.
+* OpenVPN daemon mode is used; the connection persists until explicitly disconnected.
+* No NetworkExtension / App Store sandboxed VPN extensions are used;
+  this keeps the implementation dependency-free but means the tunnel is system-wide.
+
+<p align="right"><a href="#top">⬆️ Back to top️</a></p>
+
+
+
 <!-- LICENSE -->
 ## License
 

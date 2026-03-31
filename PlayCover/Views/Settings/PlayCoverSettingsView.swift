@@ -13,7 +13,7 @@ struct PlayCoverSettingsView: View {
     @EnvironmentObject var storeVM: StoreVM
 
     private enum Tabs: Hashable {
-        case updates, ipasource, keyCover, install, uninstall
+        case updates, ipasource, keyCover, install, uninstall, vpn
     }
 
     var body: some View {
@@ -44,6 +44,11 @@ struct PlayCoverSettingsView: View {
                   Label("preferences.tab.uninstall", systemImage: "trash.square")
                 }
                 .tag(Tabs.uninstall)
+            VPNSettings()
+                .tabItem {
+                    Label("preferences.tab.vpn", systemImage: "network.badge.shield.half.filled")
+                }
+                .tag(Tabs.vpn)
         }
     }
 }
