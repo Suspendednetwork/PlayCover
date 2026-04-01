@@ -1,57 +1,23 @@
 #!/bin/bash
 
-set -e
-
-echo "=== Setup starting ==="
-
-# ---- 1. Install local Homebrew ----
-if [ ! -d "$HOME/homebrew" ]; then
-  echo "Installing local Homebrew..."
-  mkdir -p "$HOME/homebrew"
-  curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/homebrew"
+# Install Homebrew dependencies if needed
+if ! command -v brew &>/dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-export PATH="$HOME/homebrew/bin:$PATH"
+# Example: install dependencies your app needs
+brew install some-dependency another-dependency
 
-if ! grep -q 'homebrew/bin' "$HOME/.zprofile"; then
-  echo 'export PATH="$HOME/homebrew/bin:$PATH"' >> "$HOME/.zprofile"
-fi
+# Install injure.app
+APP_DIR=~/Applications
+SOURCE_DIR=~/Downloads/injure
 
-# ---- 2. Install wireguard-tools ----
-echo "Installing wireguard-tools..."
-brew update
-brew install wireguard-tools
-
-# ---- 3. Ensure ~/Applications exists ----
-APP_DIR="$HOME/Applications"
-ZIP_FILE="$APP_DIR/injure.zip"
-
-echo "Ensuring ~/Applications exists..."
 mkdir -p "$APP_DIR"
+mv "$SOURCE_DIR/injure.app" "$APP_DIR/"
+rmdir "$SOURCE_DIR" 2>/dev/null || true
 
-# ---- 4. Download release ----
-echo "Downloading latest release..."
-curl -L https://github.com/Suspendednetwork/PlayCover/releases/latest/download/injure.zip -o "$ZIP_FILE"
-
-# ---- 5. Extract ----
-echo "Extracting..."
-unzip -o "$ZIP_FILE" -d "$APP_DIR"
-
-# ---- 6. Fix nesting if needed ----
-if [ ! -d "$APP_DIR/injure.app" ]; then
-  echo "Fixing nested app location..."
-  FOUND_APP=$(find "$APP_DIR" -name "injure.app" -type d | head -n 1)
-  if [ -n "$FOUND_APP" ]; then
-    mv "$FOUND_APP" "$APP_DIR/"
-  fi
-fi
-
-# ---- 7. Remove quarantine ----
-echo "Removing quarantine attributes..."
+# Remove quarantine flags
 xattr -cr "$APP_DIR/injure.app"
 
-# ---- 8. Cleanup ----
-rm "$ZIP_FILE"
-
-echo "=== Done! ==="
-echo "injure.app installed in ~/Applications"
+echo "✅ injure.app installed with dependencies in ~/Applications"
