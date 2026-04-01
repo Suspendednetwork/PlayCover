@@ -188,8 +188,8 @@ class VPNVM: ObservableObject {
         }
 
         // wg-quick derives the interface name from the config file name (without extension).
-        let interfaceName = configURL.deletingPathExtension().lastPathComponent
-
+        // For disconnect / retry we pass the full config path so wg-quick resolves the
+        // interface name the same way it did on connect, avoiding UUID-length name issues.
         connectionState = .connecting
         activeProfileID = profile.id
         connectionLog = ""
@@ -204,7 +204,7 @@ class VPNVM: ObservableObject {
                 }
             } else if output.contains("already exists") {
                 // Interface already up — bring it down then back up.
-                self.runPrivileged(binary: wgQuick, args: ["down", interfaceName]) { _, _ in
+                self.runPrivileged(binary: wgQuick, args: ["down", configURL.path]) { _, _ in
                     self.runPrivileged(binary: wgQuick, args: ["up", configURL.path]) { success2, output2 in
                         Task { @MainActor in
                             if success2 {
@@ -237,9 +237,8 @@ class VPNVM: ObservableObject {
         }
 
         let cfgURL = configURL(for: profile)
-        let interfaceName = cfgURL.deletingPathExtension().lastPathComponent
 
-        runPrivileged(binary: wgQuick, args: ["down", interfaceName]) { [weak self] _, _ in
+        runPrivileged(binary: wgQuick, args: ["down", cfgURL.path]) { [weak self] _, _ in
             Task { @MainActor in
                 self?.resetState()
             }
@@ -396,12 +395,11 @@ class VPNVM: ObservableObject {
         Log.shared.log(message, isError: true)
     }
 
+    @MainActor
     private func markLastConnected(profileID: UUID) {
-        Task { @MainActor in
-            if let index = self.profiles.firstIndex(where: { $0.id == profileID }) {
-                self.profiles[index].lastConnected = Date()
-                self.save()
-            }
+        if let index = profiles.firstIndex(where: { $0.id == profileID }) {
+            profiles[index].lastConnected = Date()
+            save()
         }
     }
 }

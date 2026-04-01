@@ -12,7 +12,13 @@ struct VPNSettings: View {
     // @ObservedObject (not @StateObject) because VPNVM.shared is a pre-existing singleton.
     @ObservedObject private var vpnVM = VPNVM.shared
 
-    @State private var selectedProfileID: VPNProfile.ID?
+    // macOS List(selection:) requires the binding to match the element's ID type (UUID).
+    @State private var selectedProfileID: UUID?
+    /// Derived from the selected row ID; nil when nothing is selected or the profile was deleted.
+    private var selectedProfile: VPNProfile? {
+        guard let selectedProfileID else { return nil }
+        return vpnVM.profiles.first { $0.id == selectedProfileID }
+    }
 
     @State private var showingImportSheet = false
     @State private var importType: VPNType = .wireGuard
@@ -46,10 +52,11 @@ struct VPNSettings: View {
         ) {
             Button(NSLocalizedString("button.Cancel", comment: ""), role: .cancel) {}
             Button(NSLocalizedString("vpn.button.delete", comment: ""), role: .destructive) {
-                guard let profile = profileToDelete else { return }
-                vpnVM.delete(profile: profile)
-                if selectedProfileID == profile.id {
-                    selectedProfileID = nil
+                if let profile = profileToDelete {
+                    vpnVM.delete(profile: profile)
+                    if selectedProfileID == profile.id {
+                        selectedProfileID = nil
+                    }
                 }
             }
         }
@@ -57,13 +64,11 @@ struct VPNSettings: View {
 
     private var profileListSection: some View {
         HStack(alignment: .top, spacing: 0) {
+            // Profile list
             List(vpnVM.profiles, id: \.id, selection: $selectedProfileID) { profile in
-                VPNProfileRow(
-                    profile: profile,
-                    isActive: vpnVM.activeProfileID == profile.id,
-                    connectionState: vpnVM.connectionState
-                )
-                .tag(profile.id)
+                VPNProfileRow(profile: profile,
+                              isActive: vpnVM.activeProfileID == profile.id,
+                              connectionState: vpnVM.connectionState)
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
 
