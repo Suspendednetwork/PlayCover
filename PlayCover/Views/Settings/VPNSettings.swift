@@ -22,9 +22,16 @@ struct VPNSettings: View {
 
     @State private var showingImportSheet = false
     @State private var importType: VPNType = .wireGuard
+
     @State private var showingDeleteAlert = false
     @State private var profileToDelete: VPNProfile?
+
     @State private var showingLogSheet = false
+
+    private var selectedProfile: VPNProfile? {
+        guard let selectedProfileID else { return nil }
+        return vpnVM.profiles.first(where: { $0.id == selectedProfileID })
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,11 +47,10 @@ struct VPNSettings: View {
             VPNLogView(log: vpnVM.connectionLog)
         }
         .alert(
-            String(format: NSLocalizedString("vpn.delete.confirm", comment: ""),
-                   profileToDelete?.name ?? ""),
+            String(format: NSLocalizedString("vpn.delete.confirm", comment: ""), profileToDelete?.name ?? ""),
             isPresented: $showingDeleteAlert
         ) {
-            Button(NSLocalizedString("button.Cancel", comment: ""), role: .cancel) { }
+            Button(NSLocalizedString("button.Cancel", comment: ""), role: .cancel) {}
             Button(NSLocalizedString("vpn.button.delete", comment: ""), role: .destructive) {
                 if let profile = profileToDelete {
                     vpnVM.delete(profile: profile)
@@ -56,8 +62,6 @@ struct VPNSettings: View {
         }
     }
 
-    // MARK: Profile List Section
-
     private var profileListSection: some View {
         HStack(alignment: .top, spacing: 0) {
             // Profile list
@@ -68,9 +72,7 @@ struct VPNSettings: View {
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
 
-            // Action buttons
             VStack(spacing: 8) {
-                // Import menu
                 Menu {
                     Button {
                         importType = .wireGuard
@@ -78,6 +80,7 @@ struct VPNSettings: View {
                     } label: {
                         Label("WireGuard (.conf)", systemImage: "shield")
                     }
+
                     Button {
                         importType = .openVPN
                         showingImportSheet = true
@@ -90,12 +93,10 @@ struct VPNSettings: View {
                 }
                 .menuStyle(.borderedButton)
 
-                // Delete button
                 Button {
-                    if let profile = selectedProfile {
-                        profileToDelete = profile
-                        showingDeleteAlert = true
-                    }
+                    guard let profile = selectedProfile else { return }
+                    profileToDelete = profile
+                    showingDeleteAlert = true
                 } label: {
                     Text("vpn.button.delete")
                         .frame(width: 140)
@@ -104,12 +105,10 @@ struct VPNSettings: View {
 
                 Divider()
 
-                // Connect / Disconnect
                 if vpnVM.connectionState == .disconnected {
                     Button {
-                        if let profile = selectedProfile {
-                            vpnVM.connect(profile: profile)
-                        }
+                        guard let profile = selectedProfile else { return }
+                        vpnVM.connect(profile: profile)
                     } label: {
                         Text("vpn.button.connect")
                             .frame(width: 140)
@@ -125,7 +124,6 @@ struct VPNSettings: View {
                     .disabled(vpnVM.connectionState == .disconnecting)
                 }
 
-                // View log
                 Button {
                     showingLogSheet = true
                 } label: {
@@ -142,16 +140,17 @@ struct VPNSettings: View {
         .padding(16)
     }
 
-    // MARK: Status Bar
-
     private var statusBar: some View {
         HStack(spacing: 8) {
             connectionIndicator
                 .frame(width: 10, height: 10)
+
             Text(vpnVM.connectionState.localizedDescription)
                 .font(.callout)
                 .foregroundStyle(.secondary)
+
             Spacer()
+
             if let profile = vpnVM.profiles.first(where: { $0.id == vpnVM.activeProfileID }) {
                 Text(profile.name)
                     .font(.callout)
@@ -194,10 +193,12 @@ private struct VPNProfileRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.name)
                     .fontWeight(isActive ? .semibold : .regular)
+
                 HStack(spacing: 4) {
                     Text(profile.type.rawValue)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
                     if let last = profile.lastConnected {
                         Text("·")
                             .font(.caption)
@@ -250,41 +251,43 @@ struct ImportVPNProfileView: View {
     @State private var profileName = ""
     @State private var selectedFileURL: URL?
     @State private var showingFilePicker = false
+
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var vpnVM = VPNVM.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(String(format:
-                NSLocalizedString("vpn.import.title", comment: ""),
-                vpnType.rawValue))
+            Text(String(format: NSLocalizedString("vpn.import.title", comment: ""), vpnType.rawValue))
                 .font(.headline)
 
-            // Profile name
-            LabeledContent {
-                TextField(NSLocalizedString("vpn.import.namePlaceholder", comment: ""),
-                          text: $profileName)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("vpn.import.name")
+                    .frame(width: 120, alignment: .leading)
+
+                TextField(NSLocalizedString("vpn.import.namePlaceholder", comment: ""), text: $profileName)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
-            } label: {
-                Text("vpn.import.name")
+
+                Spacer()
             }
 
-            // File picker
-            LabeledContent {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("vpn.import.file")
+                    .frame(width: 120, alignment: .leading)
+
                 HStack {
-                    Text(selectedFileURL?.lastPathComponent ??
-                         NSLocalizedString("vpn.import.noFile", comment: ""))
+                    Text(selectedFileURL?.lastPathComponent ?? NSLocalizedString("vpn.import.noFile", comment: ""))
                         .foregroundStyle(selectedFileURL == nil ? .secondary : .primary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .frame(maxWidth: 220, alignment: .leading)
+
                     Button(NSLocalizedString("vpn.import.browse", comment: "")) {
                         showingFilePicker = true
                     }
                 }
-            } label: {
-                Text("vpn.import.file")
+
+                Spacer()
             }
 
             Spacer()
@@ -296,9 +299,7 @@ struct ImportVPNProfileView: View {
                 }
                 Button(NSLocalizedString("button.OK", comment: "")) {
                     if let url = selectedFileURL {
-                        let name = profileName.isEmpty
-                            ? url.deletingPathExtension().lastPathComponent
-                            : profileName
+                        let name = profileName.isEmpty ? url.deletingPathExtension().lastPathComponent : profileName
                         vpnVM.importProfile(from: url, type: vpnType, name: name)
                     }
                     dismiss()
@@ -317,11 +318,10 @@ struct ImportVPNProfileView: View {
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first {
-                    selectedFileURL = url
-                    if profileName.isEmpty {
-                        profileName = url.deletingPathExtension().lastPathComponent
-                    }
+                guard let url = urls.first else { return }
+                selectedFileURL = url
+                if profileName.isEmpty {
+                    profileName = url.deletingPathExtension().lastPathComponent
                 }
             case .failure(let error):
                 Log.shared.error(error)
@@ -348,10 +348,9 @@ struct VPNLogView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("vpn.log.title")
                 .font(.headline)
+
             ScrollView {
-                Text(log.isEmpty
-                     ? NSLocalizedString("vpn.log.empty", comment: "")
-                     : log)
+                Text(log.isEmpty ? NSLocalizedString("vpn.log.empty", comment: "") : log)
                     .font(.system(.caption, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
@@ -359,6 +358,7 @@ struct VPNLogView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(nsColor: .textBackgroundColor))
             .cornerRadius(6)
+
             HStack {
                 Spacer()
                 Button(NSLocalizedString("button.OK", comment: "")) {
