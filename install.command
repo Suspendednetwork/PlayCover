@@ -1,51 +1,56 @@
 #!/bin/bash
-set -e
 
-echo "=== Installing WireGuard CLI and Injure ==="
+# --- Setup directories ---
+BIN_DIR="$HOME/bin"
+APP_DIR="$HOME/Applications"
+mkdir -p "$BIN_DIR" "$APP_DIR"
 
-# --- Create local bin and Applications directories ---
-mkdir -p "$HOME/bin"
-mkdir -p "$HOME/Applications"
-
-# --- Install WireGuard CLI ---
-WIREGUARD_URL="https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20260223.zip"
-WIREGUARD_TEMP="$(mktemp -d)"
-echo "Downloading WireGuard CLI..."
-curl -L -o "$WIREGUARD_TEMP/wg.zip" "$WIREGUARD_URL"
-
-echo "Unzipping WireGuard CLI..."
-unzip -q "$WIREGUARD_TEMP/wg.zip" -d "$WIREGUARD_TEMP"
-
-# The binary location inside the zip
-WG_BINARY_PATH="$WIREGUARD_TEMP/wireguard-tools-1.0.20260223/src/wg"
-if [ ! -f "$WG_BINARY_PATH" ]; then
-    echo "Error: WireGuard binary not found inside zip."
-    exit 1
+# --- Add ~/bin to PATH if not already ---
+if ! echo "$PATH" | grep -q "$BIN_DIR"; then
+    echo "Adding $BIN_DIR to PATH..."
+    SHELL_RC="$HOME/.zshrc"
+    # Fallback for bash users
+    if [ ! -f "$SHELL_RC" ]; then
+        SHELL_RC="$HOME/.bash_profile"
+    fi
+    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+    export PATH="$BIN_DIR:$PATH"
 fi
 
-echo "Moving WireGuard binary to ~/bin..."
-mv "$WG_BINARY_PATH" "$HOME/bin/wg"
-chmod +x "$HOME/bin/wg"
+# --- Install WireGuard CLI ---
+WG_URL="https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20260223.zip"
+TEMP_DIR="$(mktemp -d)"
+echo "Downloading WireGuard CLI..."
+curl -fsSL "$WG_URL" -o "$TEMP_DIR/wg.zip"
+
+echo "Unzipping WireGuard CLI..."
+unzip -q "$TEMP_DIR/wg.zip" -d "$TEMP_DIR"
+WG_BIN_SRC="$TEMP_DIR/wireguard-tools-1.0.20260223/src/wg"
+if [ -f "$WG_BIN_SRC" ]; then
+    echo "Installing WireGuard CLI to $BIN_DIR..."
+    mv "$WG_BIN_SRC" "$BIN_DIR/wg"
+    chmod +x "$BIN_DIR/wg"
+else
+    echo "WireGuard binary not found in zip!"
+fi
 
 # --- Install Injure.app ---
 INJURE_URL="https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip"
-INJURE_TEMP="$(mktemp -d)"
 echo "Downloading Injure..."
-curl -L -o "$INJURE_TEMP/injure.zip" "$INJURE_URL"
+curl -fsSL "$INJURE_URL" -o "$TEMP_DIR/injure.zip"
 
 echo "Unzipping Injure..."
-unzip -q "$INJURE_TEMP/injure.zip" -d "$INJURE_TEMP"
+unzip -q "$TEMP_DIR/injure.zip" -d "$TEMP_DIR"
 
-if [ ! -d "$INJURE_TEMP/injure.app" ]; then
-    echo "Error: Injure.app not found inside zip."
-    exit 1
+if [ -d "$TEMP_DIR/injure.app" ]; then
+    echo "Moving Injure to $APP_DIR..."
+    mv "$TEMP_DIR/injure.app" "$APP_DIR/"
+else
+    echo "Injure.app not found in zip!"
 fi
 
-echo "Moving Injure to ~/Applications..."
-mv "$INJURE_TEMP/injure.app" "$HOME/Applications/"
-
 # --- Cleanup ---
-rm -rf "$WIREGUARD_TEMP" "$INJURE_TEMP"
+rm -rf "$TEMP_DIR"
 
-echo "=== Installation Complete ==="
-echo "Make sure ~/bin is in your PATH: export PATH=\"\$HOME/bin:\$PATH\""
+echo "Installation complete!"
+echo "You may need to restart your Terminal or run 'source ~/.zshrc' (or ~/.bash_profile) to use 'wg' from anywhere."
