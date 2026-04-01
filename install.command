@@ -2,58 +2,45 @@
 
 set -e
 
+APP_NAME="injure"
 APP_DIR="$HOME/Applications"
-ZIP_FILE="$APP_DIR/injure.zip"
+ZIP_FILE="$HOME/$APP_NAME.zip"
 
-echo "=== Installing injure.app ==="
+echo "🚀 Installing $APP_NAME..."
 
-# Create Applications folder
-mkdir -p "$APP_DIR"
-
-# Download app
-curl -L https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip -o "$ZIP_FILE"
-
-# Extract (ignore __MACOSX)
-unzip -o "$ZIP_FILE" -d "$APP_DIR" -x "__MACOSX/*"
-
-# Remove quarantine
-xattr -cr "$APP_DIR/injure.app"
-
-# Cleanup
-rm -f "$ZIP_FILE"
-rm -rf "$APP_DIR/__MACOSX"
-
-# Verify
-if [ -d "$APP_DIR/injure.app" ]; then
-  echo "✅ injure.app installed in ~/Applications"
+# 1️⃣ Move injure.app to Applications
+if [ -d "$APP_NAME.app" ]; then
+    mkdir -p "$APP_DIR"
+    mv -f "$APP_NAME.app" "$APP_DIR/"
+    echo "✅ $APP_NAME.app moved to $APP_DIR"
 else
-  echo "❌ Install failed"
-  exit 1
+    echo "⚠️ $APP_NAME.app not found in current folder"
 fi
 
-echo "=== Setting up Homebrew (no admin) ==="
-
-# Install local Homebrew if missing
-if [ ! -d "$HOME/homebrew" ]; then
-  mkdir -p "$HOME/homebrew"
-  curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/homebrew"
+# 2️⃣ Delete injure.zip if it exists
+if [ -f "$ZIP_FILE" ]; then
+    rm -f "$ZIP_FILE"
+    echo "🗑️ Deleted $ZIP_FILE"
 fi
 
-# Add to PATH
-export PATH="$HOME/homebrew/bin:$PATH"
-
-# Persist PATH
-if ! grep -q 'homebrew/bin' "$HOME/.zprofile"; then
-  echo 'export PATH="$HOME/homebrew/bin:$PATH"' >> "$HOME/.zprofile"
+# 3️⃣ Hide any __MACOSX folders
+if [ -d "__MACOSX" ]; then
+    rm -rf "__MACOSX"
+    echo "🙈 Hidden __MACOSX folder"
 fi
 
-echo "=== Installing dependencies ==="
+# 4️⃣ Install WireGuard CLI manually (avoids Homebrew hang)
+WG_BIN="/usr/local/bin/wg"
+if [ ! -f "$WG_BIN" ]; then
+    echo "⚡ Installing WireGuard CLI..."
+    sudo curl -L -o "$WG_BIN" https://git.zx2c4.com/wireguard-tools/snapshot/wg-1.0.20230327.tar.xz
+    sudo chmod +x "$WG_BIN"
+    echo "✅ WireGuard CLI installed at $WG_BIN"
+else
+    echo "✅ WireGuard CLI already installed"
+fi
 
-# Update (don't fail if slow)
-brew update || true
+# 5️⃣ OpenVPN warning
+echo "⚠️ OpenVPN CLI requires Homebrew. If you want it, install Homebrew first, then run: brew install openvpn"
 
-# Install VPN tools (don't block install if they fail)
-brew install wireguard-tools --force-bottle || true
-brew install openvpn --force-bottle || true
-
-echo "🎉 Done! injure.app + VPN tools installed"
+echo "🎉 Installation complete!"
