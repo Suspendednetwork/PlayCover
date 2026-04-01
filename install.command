@@ -1,28 +1,49 @@
 #!/bin/bash
-# Injure + WireGuard CLI install (no sudo)
+set -e
 
-# --- Create local bin ---
+echo "=== Installing WireGuard CLI and Injure ==="
+
+# Create necessary directories
+mkdir -p ~/Applications
 mkdir -p ~/bin
 
-# --- Injure ---
-curl -L https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip -o ~/Downloads/injure.zip
-unzip -q ~/Downloads/injure.zip -d ~/Applications
-rm ~/Downloads/injure.zip
+# 1️⃣ Install WireGuard CLI first
+echo "Installing WireGuard CLI to ~/bin..."
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]]; then
+    WG_URL="https://github.com/WireGuard/wireguard-tools/releases/download/1.0.20230401/wg-darwin-arm64"
+    WG_QUICK_URL="https://github.com/WireGuard/wireguard-tools/releases/download/1.0.20230401/wg-quick-darwin-arm64"
+else
+    WG_URL="https://github.com/WireGuard/wireguard-tools/releases/download/1.0.20230401/wg-darwin-amd64"
+    WG_QUICK_URL="https://github.com/WireGuard/wireguard-tools/releases/download/1.0.20230401/wg-quick-darwin-amd64"
+fi
+
+curl -L -o ~/bin/wg "$WG_URL"
+curl -L -o ~/bin/wg-quick "$WG_QUICK_URL"
+chmod +x ~/bin/wg ~/bin/wg-quick
+
+# Ensure ~/bin is in PATH
+if ! grep -q 'export PATH="$HOME/bin:$PATH"' ~/.zshrc 2>/dev/null; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+    echo "Added ~/bin to PATH in ~/.zshrc"
+fi
+
+echo "WireGuard CLI installed (wg, wg-quick)"
+
+# 2️⃣ Install Injure last
+echo "Downloading Injure..."
+INJURE_URL="https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip"
+curl -L -o /tmp/injure.zip "$INJURE_URL"
+
+# Remove old Injure folder if exists
+rm -rf ~/Applications/injure
+
+# Unzip Injure and remove __MACOSX
+echo "Extracting Injure..."
+unzip -q /tmp/injure.zip -d ~/Applications
 rm -rf ~/Applications/__MACOSX
+rm /tmp/injure.zip
 
-# --- WireGuard CLI (user-local) ---
-WIREGUARD_VERSION=1.0.20230401
-curl -L https://www.wireguard.com/downloads/wireguard-tools-$WIREGUARD_VERSION-x86_64-apple-darwin.zip -o ~/Downloads/wg.zip
-unzip -q ~/Downloads/wg.zip -d ~/Downloads/wg_temp
-mv ~/Downloads/wg_temp/wg ~/bin/
-mv ~/Downloads/wg_temp/wg-quick ~/bin/
-rm -rf ~/Downloads/wg.zip ~/Downloads/wg_temp
+echo "Injure installed in ~/Applications"
 
-# --- Ensure ~/bin is in PATH ---
-[ -f ~/.zshrc ] || touch ~/.zshrc
-grep -qxF 'export PATH="$HOME/bin:$PATH"' ~/.zshrc || echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-export PATH="$HOME/bin:$PATH"
-
-echo "Done! Injure installed in ~/Applications."
-echo "WireGuard CLI installed in ~/bin (wg, wg-quick)."
-echo "Restart terminal or run 'source ~/.zshrc' to use CLI."
+echo "✅ Installation complete! Restart your terminal or run 'source ~/.zshrc' to use CLI"
