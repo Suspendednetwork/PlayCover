@@ -91,15 +91,43 @@ To uninstall:
 PlayCover includes a built-in VPN manager for **WireGuard** and **OpenVPN** profiles.
 Access it via **Settings → VPN**.
 
-### Prerequisites
+### VPN Backend
 
-The VPN feature shells out to standard CLI tools.  
-Install them with [Homebrew](https://brew.sh) before connecting:
+PlayCover supports two VPN backends, selectable in **Settings → VPN** with the
+**VPN Backend** toggle:
 
-| Protocol  | Homebrew package         | Installs binary              |
-|-----------|--------------------------|------------------------------|
+| Backend | Description |
+|---------|-------------|
+| **Embedded** *(default)* | Looks for `wg-quick` / `openvpn` inside `PlayCover.app/Contents/Helpers/` first, then falls back to system paths. No Homebrew installation required when bundled binaries are present. |
+| **System** | Only searches Homebrew / standard system paths (`/opt/homebrew/bin`, `/usr/local/bin`). Requires manual installation (see below). |
+
+#### Using the Embedded backend (no external install needed)
+
+Place statically-linked or portable binaries for your Mac's architecture
+(`arm64` for Apple Silicon) inside the app bundle:
+
+```
+PlayCover.app/Contents/Helpers/wg-quick   # WireGuard
+PlayCover.app/Contents/Helpers/openvpn    # OpenVPN
+```
+
+Both files must be executable (`chmod +x`).  
+You can obtain suitable binaries from the upstream WireGuard and OpenVPN
+releases or build them yourself; they are not redistributed by PlayCover.
+
+If a bundled binary is absent, PlayCover automatically falls back to any
+system-installed binary and logs the lookup so you can diagnose issues via
+**View Log**.
+
+#### Using the System backend (Homebrew)
+
+Set the backend to **System** and install the CLI tools with
+[Homebrew](https://brew.sh):
+
+| Protocol  | Homebrew package               | Installs binary              |
+|-----------|--------------------------------|------------------------------|
 | WireGuard | `brew install wireguard-tools` | `/opt/homebrew/bin/wg-quick` |
-| OpenVPN   | `brew install openvpn`   | `/opt/homebrew/bin/openvpn`  |
+| OpenVPN   | `brew install openvpn`         | `/opt/homebrew/bin/openvpn`  |
 
 > **macOS permission:** Both tools require administrator privileges to create network
 > interfaces. PlayCover will show a standard macOS authentication dialog when you connect.
@@ -125,12 +153,14 @@ Click **Disconnect** to bring the tunnel down.
 ### Viewing the connection log
 
 Click **View Log** to inspect live output from the VPN process.
-This is useful for diagnosing authentication or TLS errors.
+This is useful for diagnosing authentication or TLS errors, or for verifying
+which binary was resolved (embedded vs. system).
 
 ### Known limitations
 
 * **Apple Silicon only** – same requirement as PlayCover itself.
-* WireGuard and OpenVPN are not bundled; they must be installed separately.
+* VPN binaries are not redistributed by PlayCover; use the Embedded backend
+  with your own binaries or install via Homebrew (System backend).
 * A system-wide admin password prompt appears on every connect/disconnect.
 * OpenVPN daemon mode is used; the connection persists until explicitly disconnected.
 * No NetworkExtension / App Store sandboxed VPN extensions are used;
