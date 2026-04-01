@@ -4,6 +4,7 @@ set -e
 
 APP_NAME="injure"
 APP_DIR="$HOME/Applications"
+USER_BIN="$HOME/bin"   # Local bin folder for non-sudo executables
 ZIP_FILE="$HOME/$APP_NAME.zip"
 
 echo "🚀 Installing $APP_NAME..."
@@ -29,18 +30,25 @@ if [ -d "__MACOSX" ]; then
     echo "🙈 Hidden __MACOSX folder"
 fi
 
-# 4️⃣ Install WireGuard CLI manually (avoids Homebrew hang)
-WG_BIN="/usr/local/bin/wg"
+# 4️⃣ Install WireGuard CLI locally (no sudo)
+WG_BIN="$USER_BIN/wg"
+mkdir -p "$USER_BIN"
 if [ ! -f "$WG_BIN" ]; then
-    echo "⚡ Installing WireGuard CLI..."
-    sudo curl -L -o "$WG_BIN" https://git.zx2c4.com/wireguard-tools/snapshot/wg-1.0.20230327.tar.xz
-    sudo chmod +x "$WG_BIN"
+    echo "⚡ Installing WireGuard CLI locally..."
+    curl -L -o "$WG_BIN" https://git.zx2c4.com/wireguard-tools/snapshot/wg-1.0.20230327.tar.xz
+    chmod +x "$WG_BIN"
     echo "✅ WireGuard CLI installed at $WG_BIN"
 else
-    echo "✅ WireGuard CLI already installed"
+    echo "✅ WireGuard CLI already installed at $WG_BIN"
 fi
 
-# 5️⃣ OpenVPN warning
-echo "⚠️ OpenVPN CLI requires Homebrew. If you want it, install Homebrew first, then run: brew install openvpn"
+# 5️⃣ OpenVPN note
+echo "⚠️ OpenVPN CLI requires Homebrew for installation. To install, you’ll need Homebrew or an alternative method."
+
+# 6️⃣ Update PATH if needed
+if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
+    echo "🔧 Add $USER_BIN to your PATH to use wg easily:"
+    echo "export PATH=\"\$PATH:$USER_BIN\""
+fi
 
 echo "🎉 Installation complete!"
