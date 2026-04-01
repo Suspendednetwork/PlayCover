@@ -17,7 +17,7 @@ struct VPNSettings: View {
     /// Derived from the selected row ID; nil when nothing is selected or the profile was deleted.
     private var selectedProfile: VPNProfile? {
         guard let selectedProfileID else { return nil }
-        return vpnVM.profiles.first { $0.id == selectedProfileID }
+        return vpnVM.profiles.first(where: { $0.id == selectedProfileID })
     }
 
     @State private var showingImportSheet = false
@@ -28,18 +28,18 @@ struct VPNSettings: View {
 
     @State private var showingLogSheet = false
 
-    private var selectedProfile: VPNProfile? {
-        guard let selectedProfileID else { return nil }
-        return vpnVM.profiles.first(where: { $0.id == selectedProfileID })
-    }
+    /// Persisted VPN backend preference.
+    @AppStorage("vpnBackend") private var vpnBackend: String = VPNBackend.embedded.rawValue
 
     var body: some View {
         VStack(spacing: 0) {
             profileListSection
             Divider()
+            backendSection
+            Divider()
             statusBar
         }
-        .frame(width: 600, height: 340)
+        .frame(width: 600, height: 390)
         .sheet(isPresented: $showingImportSheet) {
             ImportVPNProfileView(vpnType: importType)
         }
@@ -138,6 +138,28 @@ struct VPNSettings: View {
             .padding(.top, 4)
         }
         .padding(16)
+    }
+
+    private var backendSection: some View {
+        HStack(spacing: 8) {
+            Text("vpn.backend.label")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            Picker("", selection: $vpnBackend) {
+                ForEach(VPNBackend.allCases) { backend in
+                    Text(backend.localizedName).tag(backend.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 320)
+            .help(NSLocalizedString("vpn.backend.help", comment: ""))
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 
     private var statusBar: some View {

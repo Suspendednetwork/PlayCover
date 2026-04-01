@@ -5,6 +5,31 @@
 
 import Foundation
 
+// MARK: - VPN Backend
+
+/// Controls which VPN binaries PlayCover will use when establishing a tunnel.
+///
+/// - `embedded`: Prefer binaries bundled inside the app's `Contents/Helpers/` directory.
+///   Falls back to system-installed binaries when no bundled binary is present.
+///   Use this mode to run VPN connections without requiring a separate Homebrew installation.
+/// - `system`: Only search the standard system-wide paths written by Homebrew
+///   (`/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`).
+enum VPNBackend: String, Codable, CaseIterable, Identifiable {
+    /// Prefer the binary bundled inside `PlayCover.app/Contents/Helpers/`.
+    case embedded
+    /// Use only system-installed binaries (Homebrew / standard system locations).
+    case system
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .embedded: return NSLocalizedString("vpn.backend.embedded", comment: "")
+        case .system:   return NSLocalizedString("vpn.backend.system", comment: "")
+        }
+    }
+}
+
 // MARK: - VPN Profile Type
 
 /// Supported VPN tunnel protocol types.

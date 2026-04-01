@@ -98,10 +98,17 @@
 "vpn.error.emptyName" = "Profile name must not be empty.";
 "vpn.error.configNotFound" = "Config file not found for this profile.";
 "vpn.error.wgNotFound" = "wg-quick not found. Install WireGuard via Homebrew: brew install wireguard-tools";
+"vpn.error.wgNotFoundEmbedded" = "wg-quick not found. Place a wg-quick binary at PlayCover.app/Contents/Helpers/wg-quick for embedded mode, or switch to the System backend and run: brew install wireguard-tools";
 "vpn.error.ovpnNotFound" = "openvpn not found. Install OpenVPN via Homebrew: brew install openvpn";
+"vpn.error.ovpnNotFoundEmbedded" = "openvpn not found. Place an openvpn binary at PlayCover.app/Contents/Helpers/openvpn for embedded mode, or switch to the System backend and run: brew install openvpn";
 "vpn.error.authFailed" = "Authentication failed. Check your credentials.";
 "vpn.error.tlsFailed" = "TLS handshake failed. Check your server configuration.";
 "vpn.error.timeout" = "Connection timed out after 60 seconds.";
+
+"vpn.backend.label" = "VPN Backend:";
+"vpn.backend.embedded" = "Embedded";
+"vpn.backend.system" = "System";
+"vpn.backend.help" = "Embedded: use binaries in PlayCover.app/Contents/Helpers/ (no Homebrew needed). System: use Homebrew or system-installed binaries.";
 "preferences.toggle.showInstallPopup" = "Show install PlayTools popup";
 "preferences.toggle.alwaysInstallPlayTools" = "Always install PlayTools";
 "preferences.toggle.showAppStorePopup" = "Show an alert if the application has an official AppStore version";

@@ -35,6 +35,95 @@ class VPNVM: ObservableObject {
     /// Timer used to poll the OpenVPN log file after starting the daemon.
     private var openvpnPollTimer: Timer?
 
+    // MARK: Backend
+
+    /// Filesystem path to the app bundle's `Contents/Helpers/` directory.
+    /// Bundled VPN binaries should be placed here when using the `embedded` backend.
+    private var bundleHelpersPath: String {
+        Bundle.main.bundlePath + "/Contents/Helpers"
+    }
+
+    /// The currently configured VPN backend, persisted via `UserDefaults`.
+    /// Defaults to `.embedded` so PlayCover works without any Homebrew installation
+    /// when the appropriate binaries are bundled inside the app.
+    var selectedBackend: VPNBackend {
+        get {
+            let raw = UserDefaults.standard.string(forKey: "vpnBackend") ?? VPNBackend.embedded.rawValue
+            return VPNBackend(rawValue: raw) ?? .embedded
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "vpnBackend")
+        }
+    }
+
+    /// Resolve the `wg-quick` binary path according to the current backend.
+    ///
+    /// - For `.embedded`: checks `Contents/Helpers/wg-quick` inside the app bundle first,
+    ///   then falls back to Homebrew/system paths.
+    /// - For `.system`: only checks Homebrew/system paths.
+    ///
+    /// Returns `nil` and logs a descriptive message when no binary can be found.
+    private func resolveWireGuardBinary() -> String? {
+        let systemPaths = ["/opt/homebrew/bin/wg-quick", "/usr/local/bin/wg-quick", "/usr/bin/wg-quick"]
+
+        if selectedBackend == .embedded {
+            let bundled = bundleHelpersPath + "/wg-quick"
+            if FileManager.default.isExecutableFile(atPath: bundled) {
+                Log.shared.log("VPN: using bundled wg-quick at \(bundled)")
+                return bundled
+            }
+            // Bundled binary absent — fall through to system paths.
+            Log.shared.log("VPN: bundled wg-quick not found at \(bundled); trying system paths")
+        }
+
+        if let found = findExecutable(names: systemPaths) {
+            return found
+        }
+
+        // Neither bundled nor system binary was found — emit a helpful message.
+        let hint: String
+        if selectedBackend == .embedded {
+            hint = NSLocalizedString("vpn.error.wgNotFoundEmbedded", comment: "")
+        } else {
+            hint = NSLocalizedString("vpn.error.wgNotFound", comment: "")
+        }
+        Log.shared.log(hint, isError: true)
+        return nil
+    }
+
+    /// Resolve the `openvpn` binary path according to the current backend.
+    ///
+    /// - For `.embedded`: checks `Contents/Helpers/openvpn` inside the app bundle first,
+    ///   then falls back to Homebrew/system paths.
+    /// - For `.system`: only checks Homebrew/system paths.
+    ///
+    /// Returns `nil` and logs a descriptive message when no binary can be found.
+    private func resolveOpenVPNBinary() -> String? {
+        let systemPaths = ["/opt/homebrew/bin/openvpn", "/usr/local/bin/openvpn", "/usr/bin/openvpn"]
+
+        if selectedBackend == .embedded {
+            let bundled = bundleHelpersPath + "/openvpn"
+            if FileManager.default.isExecutableFile(atPath: bundled) {
+                Log.shared.log("VPN: using bundled openvpn at \(bundled)")
+                return bundled
+            }
+            Log.shared.log("VPN: bundled openvpn not found at \(bundled); trying system paths")
+        }
+
+        if let found = findExecutable(names: systemPaths) {
+            return found
+        }
+
+        let hint: String
+        if selectedBackend == .embedded {
+            hint = NSLocalizedString("vpn.error.ovpnNotFoundEmbedded", comment: "")
+        } else {
+            hint = NSLocalizedString("vpn.error.ovpnNotFound", comment: "")
+        }
+        Log.shared.log(hint, isError: true)
+        return nil
+    }
+
     // MARK: VPN Container Directory
 
     /// Root directory where all VPN configs are stored.
@@ -178,12 +267,10 @@ class VPNVM: ObservableObject {
     // MARK: WireGuard
 
     private func connectWireGuard(profile: VPNProfile, configURL: URL) {
-        guard let wgQuick = findExecutable(names: [
-            "/opt/homebrew/bin/wg-quick",
-            "/usr/local/bin/wg-quick",
-            "/usr/bin/wg-quick"
-        ]) else {
-            reportError(NSLocalizedString("vpn.error.wgNotFound", comment: ""))
+        guard let wgQuick = resolveWireGuardBinary() else {
+            reportError(selectedBackend == .embedded
+                ? NSLocalizedString("vpn.error.wgNotFoundEmbedded", comment: "")
+                : NSLocalizedString("vpn.error.wgNotFound", comment: ""))
             return
         }
 
@@ -227,11 +314,7 @@ class VPNVM: ObservableObject {
     }
 
     private func disconnectWireGuard(profile: VPNProfile) {
-        guard let wgQuick = findExecutable(names: [
-            "/opt/homebrew/bin/wg-quick",
-            "/usr/local/bin/wg-quick",
-            "/usr/bin/wg-quick"
-        ]) else {
+        guard let wgQuick = resolveWireGuardBinary() else {
             resetState()
             return
         }
@@ -248,12 +331,10 @@ class VPNVM: ObservableObject {
     // MARK: OpenVPN
 
     private func connectOpenVPN(profile: VPNProfile, configURL: URL) {
-        guard let ovpnBin = findExecutable(names: [
-            "/opt/homebrew/bin/openvpn",
-            "/usr/local/bin/openvpn",
-            "/usr/bin/openvpn"
-        ]) else {
-            reportError(NSLocalizedString("vpn.error.ovpnNotFound", comment: ""))
+        guard let ovpnBin = resolveOpenVPNBinary() else {
+            reportError(selectedBackend == .embedded
+                ? NSLocalizedString("vpn.error.ovpnNotFoundEmbedded", comment: "")
+                : NSLocalizedString("vpn.error.ovpnNotFound", comment: ""))
             return
         }
 
