@@ -4,40 +4,91 @@
 //
 
 import Foundation
+import AppKit
 
-class AppIntegrity: ObservableObject {
+@MainActor
+final class AppIntegrity: ObservableObject {
+    /// When true, MainView shows the "Move to Applications folder?" alert.
+    @Published var integrityOff: Bool = false
 
-    @Published var integrityOff: Bool = !AppIntegrity.insideAppsFolder
+    init() {
+        verify()
+    }
 
-    func verifyAppIntegrity() {
-        integrityOff = !AppIntegrity.insideAppsFolder
+    func verify() {
+        integrityOff = !Self.isInAllowedApplicationsFolder()
     }
 
     func moveToApps() {
         do {
-            if let url = AppIntegrity.appUrl {
-                FileManager.default.delete(at: AppIntegrity.expectedUrl)
-                try FileManager.default.copyItem(at: url, to: AppIntegrity.expectedUrl)
-                URL(fileURLWithPath: AppIntegrity.expectedUrl.path).openInFinder()
-                FileManager.default.delete(at: url)
-                    exit(0)
-                }
+            let fileManager = FileManager.default
+
+            let sourceAppURL = Bundle.main.bundleURL.resolvingSymlinksInPath()
+
+            // Move to per-user Applications folder (~/Applications)
+            let userApplicationsURL = fileManager.homeDirectoryForCurrentUser
+                .appendingPathComponent("Applications", isDirectory: true)
+
+            // Ensure ~/Applications exists
+            try fileManager.createDirectory(
+                at: userApplicationsURL,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+
+            let destinationAppURL = userApplicationsURL
+                .appendingPathComponent(sourceAppURL.lastPathComponent, isDirectory: true)
+
+            // If already there, just relaunch
+            if sourceAppURL.standardizedFileURL == destinationAppURL.standardizedFileURL {
+                relaunch(from: destinationAppURL)
+                return
+            }
+
+            // If an app already exists at destination, remove it first
+            if fileManager.fileExists(atPath: destinationAppURL.path) {
+                try fileManager.removeItem(at: destinationAppURL)
+            }
+
+            // Prefer move; if move fails (different volume), fall back to copy+remove
+            do {
+                try fileManager.moveItem(at: sourceAppURL, to: destinationAppURL)
             } catch {
+                try fileManager.copyItem(at: sourceAppURL, to: destinationAppURL)
+                try fileManager.removeItem(at: sourceAppURL)
+            }
+
+            relaunch(from: destinationAppURL)
+        } catch {
+            // If your project has a Log service, keep this; otherwise swap to NSLog/print.
+            if let log = (Log.shared as AnyObject?) {
+                _ = log
                 Log.shared.error(error)
+            } else {
+                NSLog("Failed to move PlayCover to ~/Applications: \(error)")
+            }
         }
     }
 
-    private static var appUrl: URL? {
-        Bundle.main.resourceURL?.deletingLastPathComponent().deletingLastPathComponent()
+    private func relaunch(from appURL: URL) {
+        // Launch the app at the new location
+        NSWorkspace.shared.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration())
+
+        // Quit current instance
+        NSApp.terminate(nil)
     }
 
-    private static var expectedUrl = URL(fileURLWithPath: "/Applications/PlayCover.app")
+    private static func isInAllowedApplicationsFolder() -> Bool {
+        let appURL = Bundle.main.bundleURL.resolvingSymlinksInPath()
 
-    private static var insideAppsFolder: Bool {
-        if let url = appUrl {
-            return url.path.contains("Xcode") || url.path.contains(expectedUrl.path)
-        }
-        return false
+        let systemApplicationsURL = URL(fileURLWithPath: "/Applications", isDirectory: true).resolvingSymlinksInPath()
+
+        let userApplicationsURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Applications", isDirectory: true)
+            .resolvingSymlinksInPath()
+
+        // Accept either /Applications/PlayCover.app or ~/Applications/PlayCover.app
+        return appURL.path.hasPrefix(systemApplicationsURL.path + "/")
+            || appURL.path.hasPrefix(userApplicationsURL.path + "/")
     }
-
 }

@@ -347,8 +347,8 @@ class VPNVM: ObservableObject {
     private func runPrivileged(binary: String,
                                args: [String],
                                completion: @escaping (Bool, String) -> Void) {
-        func singleQuote(_ s: String) -> String {
-            "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        func singleQuote(_ state: String) -> String {
+            "'" + state.replacingOccurrences(of: "'", with: "'\\''") + "'"
         }
         let cmd = ([binary] + args).map(singleQuote).joined(separator: " ")
         // Escape any double-quotes and backslashes that would break the AppleScript literal.

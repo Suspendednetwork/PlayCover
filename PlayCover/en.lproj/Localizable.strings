@@ -90,7 +90,7 @@
 "vpn.import.noFile" = "No file selected";
 "vpn.import.browse" = "Choose…";
 
-"vpn.delete.confirm" = "Remove VPN profile "%@"?";
+"vpn.delete.confirm" = "Remove VPN profile \"%@\"?";
 
 "vpn.log.title" = "VPN Connection Log";
 "vpn.log.empty" = "No log output yet.";
