@@ -1,56 +1,65 @@
 #!/bin/bash
+# PlayCover Install Script (No Admin Required)
 
-# --- Setup directories ---
+set -e
+
+echo "=== PlayCover Installer ==="
+
+# --- 1️⃣ Ensure ~/bin exists ---
 BIN_DIR="$HOME/bin"
-APP_DIR="$HOME/Applications"
-mkdir -p "$BIN_DIR" "$APP_DIR"
+mkdir -p "$BIN_DIR"
 
-# --- Add ~/bin to PATH if not already ---
-if ! echo "$PATH" | grep -q "$BIN_DIR"; then
-    echo "Adding $BIN_DIR to PATH..."
-    SHELL_RC="$HOME/.zshrc"
-    # Fallback for bash users
-    if [ ! -f "$SHELL_RC" ]; then
-        SHELL_RC="$HOME/.bash_profile"
-    fi
-    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
-    export PATH="$BIN_DIR:$PATH"
+# --- 2️⃣ Add ~/bin to PATH if not already ---
+SHELL_RC="$HOME/.zshrc"
+if [ -n "$BASH_VERSION" ]; then
+    SHELL_RC="$HOME/.bash_profile"
 fi
 
-# --- Install WireGuard CLI ---
+if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$SHELL_RC"; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$SHELL_RC"
+    echo "Added $BIN_DIR to PATH in $SHELL_RC"
+fi
+
+export PATH="$HOME/bin:$PATH"
+
+# --- 3️⃣ Download WireGuard CLI ---
 WG_URL="https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20260223.zip"
-TEMP_DIR="$(mktemp -d)"
+WG_TMP="$(mktemp -d)"
 echo "Downloading WireGuard CLI..."
-curl -fsSL "$WG_URL" -o "$TEMP_DIR/wg.zip"
+curl -fsSL "$WG_URL" -o "$WG_TMP/wg.zip"
 
 echo "Unzipping WireGuard CLI..."
-unzip -q "$TEMP_DIR/wg.zip" -d "$TEMP_DIR"
-WG_BIN_SRC="$TEMP_DIR/wireguard-tools-1.0.20260223/src/wg"
-if [ -f "$WG_BIN_SRC" ]; then
-    echo "Installing WireGuard CLI to $BIN_DIR..."
-    mv "$WG_BIN_SRC" "$BIN_DIR/wg"
-    chmod +x "$BIN_DIR/wg"
+unzip -q "$WG_TMP/wg.zip" -d "$WG_TMP"
+
+# Find the wg/wg-quick binaries inside the extracted folder
+WG_BIN=$(find "$WG_TMP" -type f -name wg | head -n 1)
+WG_QUICK_BIN=$(find "$WG_TMP" -type f -name wg-quick | head -n 1)
+
+if [ -f "$WG_BIN" ] && [ -f "$WG_QUICK_BIN" ]; then
+    mv "$WG_BIN" "$BIN_DIR/wg"
+    mv "$WG_QUICK_BIN" "$BIN_DIR/wg-quick"
+    chmod +x "$BIN_DIR/wg" "$BIN_DIR/wg-quick"
+    echo "WireGuard CLI installed to $BIN_DIR"
 else
     echo "WireGuard binary not found in zip!"
 fi
 
-# --- Install Injure.app ---
-INJURE_URL="https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip"
+# --- 4️⃣ Download Injure.app ---
+APP_URL="https://github.com/Suspendednetwork/PlayCover/releases/download/injure/injure.zip"
+APP_TMP="$(mktemp -d)"
 echo "Downloading Injure..."
-curl -fsSL "$INJURE_URL" -o "$TEMP_DIR/injure.zip"
+curl -fsSL "$APP_URL" -o "$APP_TMP/injure.zip"
 
 echo "Unzipping Injure..."
-unzip -q "$TEMP_DIR/injure.zip" -d "$TEMP_DIR"
+unzip -q "$APP_TMP/injure.zip" -d "$APP_TMP"
 
-if [ -d "$TEMP_DIR/injure.app" ]; then
-    echo "Moving Injure to $APP_DIR..."
-    mv "$TEMP_DIR/injure.app" "$APP_DIR/"
-else
-    echo "Injure.app not found in zip!"
+# Move Injure.app to ~/Applications, create folder if needed
+mkdir -p "$HOME/Applications"
+if [ -d "$HOME/Applications/injure.app" ]; then
+    echo "Injure.app already exists, replacing..."
+    rm -rf "$HOME/Applications/injure.app"
 fi
-
-# --- Cleanup ---
-rm -rf "$TEMP_DIR"
+mv "$APP_TMP/injure.app" "$HOME/Applications/"
 
 echo "Installation complete!"
-echo "You may need to restart your Terminal or run 'source ~/.zshrc' (or ~/.bash_profile) to use 'wg' from anywhere."
+echo "Restart your terminal or run 'source $SHELL_RC' to use 'wg' from anywhere."
