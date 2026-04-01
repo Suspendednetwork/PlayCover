@@ -1,5 +1,5 @@
 #!/bin/bash
-# PlayCover Install Script (No Admin Required)
+# PlayCover Install Script (No Admin Required, Fixed)
 
 set -e
 
@@ -9,11 +9,16 @@ echo "=== PlayCover Installer ==="
 BIN_DIR="$HOME/bin"
 mkdir -p "$BIN_DIR"
 
-# --- 2️⃣ Add ~/bin to PATH if not already ---
-SHELL_RC="$HOME/.zshrc"
-if [ -n "$BASH_VERSION" ]; then
+# --- 2️⃣ Detect shell and add ~/bin to PATH ---
+if [ -n "$ZSH_VERSION" ]; then
+    SHELL_RC="$HOME/.zshrc"
+elif [ -n "$BASH_VERSION" ]; then
     SHELL_RC="$HOME/.bash_profile"
+else
+    SHELL_RC="$HOME/.profile"
 fi
+
+touch "$SHELL_RC"
 
 if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$SHELL_RC"; then
     echo 'export PATH="$HOME/bin:$PATH"' >> "$SHELL_RC"
@@ -31,9 +36,9 @@ curl -fsSL "$WG_URL" -o "$WG_TMP/wg.zip"
 echo "Unzipping WireGuard CLI..."
 unzip -q "$WG_TMP/wg.zip" -d "$WG_TMP"
 
-# Find the wg/wg-quick binaries inside the extracted folder
-WG_BIN=$(find "$WG_TMP" -type f -name wg | head -n 1)
-WG_QUICK_BIN=$(find "$WG_TMP" -type f -name wg-quick | head -n 1)
+# Correct path inside GitHub zip
+WG_BIN=$(find "$WG_TMP/wireguard-tools-1.0.20260223/src" -type f -name wg | head -n 1)
+WG_QUICK_BIN=$(find "$WG_TMP/wireguard-tools-1.0.20260223/src" -type f -name wg-quick | head -n 1)
 
 if [ -f "$WG_BIN" ] && [ -f "$WG_QUICK_BIN" ]; then
     mv "$WG_BIN" "$BIN_DIR/wg"
@@ -41,7 +46,7 @@ if [ -f "$WG_BIN" ] && [ -f "$WG_QUICK_BIN" ]; then
     chmod +x "$BIN_DIR/wg" "$BIN_DIR/wg-quick"
     echo "WireGuard CLI installed to $BIN_DIR"
 else
-    echo "WireGuard binary not found in zip!"
+    echo "WireGuard binary not found — manual install may be required"
 fi
 
 # --- 4️⃣ Download Injure.app ---
@@ -53,7 +58,6 @@ curl -fsSL "$APP_URL" -o "$APP_TMP/injure.zip"
 echo "Unzipping Injure..."
 unzip -q "$APP_TMP/injure.zip" -d "$APP_TMP"
 
-# Move Injure.app to ~/Applications, create folder if needed
 mkdir -p "$HOME/Applications"
 if [ -d "$HOME/Applications/injure.app" ]; then
     echo "Injure.app already exists, replacing..."
