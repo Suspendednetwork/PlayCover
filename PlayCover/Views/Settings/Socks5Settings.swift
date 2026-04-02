@@ -7,8 +7,8 @@ import SwiftUI
 
 // MARK: - Global SOCKS5 Settings View
 
-struct Socks5Settings: View {
-    @ObservedObject private var socks5VM = Socks5VM.shared
+struct Socks5SettingsView: View {
+    @ObservedObject var vm: Socks5VM
 
     @State private var host: String = ""
     @State private var portText: String = ""
@@ -32,7 +32,7 @@ struct Socks5Settings: View {
     private var formSection: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Toggle("socks5.enable", isOn: $socks5VM.isEnabled)
+                Toggle("socks5.enable", isOn: $vm.isEnabled)
                     .help("socks5.enable.help")
                     .padding(.bottom, 4)
 
@@ -45,7 +45,7 @@ struct Socks5Settings: View {
                         credentialsRows
                     }
                 }
-                .disabled(!socks5VM.isEnabled)
+                .disabled(!vm.isEnabled)
 
                 Spacer(minLength: 0)
             }
@@ -126,7 +126,7 @@ struct Socks5Settings: View {
 
             Spacer()
 
-            if let url = socks5VM.activeProxyURL {
+            if let url = vm.activeProxyURL {
                 Text(url)
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
@@ -140,15 +140,15 @@ struct Socks5Settings: View {
     }
 
     private var statusColor: Color {
-        guard socks5VM.isEnabled else { return Color.gray.opacity(0.5) }
-        return socks5VM.config.isConfigured ? .green : .yellow
+        guard vm.isEnabled else { return Color.gray.opacity(0.5) }
+        return vm.config.isConfigured ? .green : .yellow
     }
 
     private var statusText: String {
-        guard socks5VM.isEnabled else {
+        guard vm.isEnabled else {
             return NSLocalizedString("socks5.status.disabled", comment: "")
         }
-        return socks5VM.config.isConfigured
+        return vm.config.isConfigured
             ? NSLocalizedString("socks5.status.configured", comment: "")
             : NSLocalizedString("socks5.status.noHost", comment: "")
     }
@@ -156,16 +156,16 @@ struct Socks5Settings: View {
     // MARK: - Helpers
 
     private func populateFields() {
-        host        = socks5VM.config.host
-        portText    = String(socks5VM.config.port)
-        requiresAuth = socks5VM.config.requiresAuth
-        username    = socks5VM.config.username
-        password    = socks5VM.config.password
+        host        = vm.config.host
+        portText    = String(vm.config.port)
+        requiresAuth = vm.config.requiresAuth
+        username    = vm.config.username
+        password    = vm.config.password
     }
 
     private func commitFields() {
         let port = UInt16(portText) ?? 1080
-        socks5VM.config = Socks5Config(
+        vm.config = Socks5Config(
             host: host,
             port: port,
             requiresAuth: requiresAuth,
@@ -178,5 +178,5 @@ struct Socks5Settings: View {
 // MARK: - Preview
 
 #Preview {
-    Socks5Settings()
+    Socks5SettingsView(vm: Socks5VM.shared)
 }
