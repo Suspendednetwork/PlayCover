@@ -104,6 +104,10 @@ struct AppSettingsView: View {
                     .tabItem {
                         Text("settings.tab.misc")
                     }
+                NetworkView(settings: $viewModel.settings)
+                    .tabItem {
+                        Text("settings.tab.network")
+                    }
                 InfoView(info: viewModel.app.info, hasPlayTools: (hasPlayTools ?? true))
                     .tabItem {
                         Text("settings.tab.info")
@@ -874,5 +878,50 @@ struct AsyncToggleStyle: ToggleStyle {
 extension ToggleStyle where Self == AsyncToggleStyle {
     static func async(_ task: Binding<BlockingTask>, role: BlockingTask) -> AsyncToggleStyle {
         AsyncToggleStyle(task: task, role: role)
+    }
+}
+
+// MARK: - Network (SOCKS5) Per-App Tab
+
+struct NetworkView: View {
+    @Binding var settings: AppSettings
+    @ObservedObject private var socks5VM = Socks5VM.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Toggle("settings.toggle.useSocks5Proxy", isOn: $settings.settings.useSocks5Proxy)
+                        .help("settings.toggle.useSocks5Proxy.help")
+                    Spacer()
+                }
+
+                if settings.settings.useSocks5Proxy {
+                    if socks5VM.config.isConfigured && socks5VM.isEnabled {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(String(format: NSLocalizedString("settings.socks5.active", comment: ""),
+                                        socks5VM.config.host, socks5VM.config.port))
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    } else {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.yellow)
+                            Text("settings.socks5.notConfigured")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+            .padding()
+        }
     }
 }

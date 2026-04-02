@@ -162,6 +162,20 @@ extension PlayApp {
             unsetenv(key)
         }
 
+        // Inject SOCKS5 proxy environment variables when the per-app toggle is enabled
+        // and the global proxy is both enabled and configured.
+        if settings.settings.useSocks5Proxy,
+           let proxyURL = Socks5VM.shared.activeProxyURL {
+            config.environment = [
+                "ALL_PROXY": proxyURL,
+                "all_proxy": proxyURL,
+                "HTTPS_PROXY": proxyURL,
+                "https_proxy": proxyURL,
+                "HTTP_PROXY": proxyURL,
+                "http_proxy": proxyURL
+            ]
+        }
+
         NSWorkspace.shared.openApplication(
             at: aliasURL,
             configuration: config,
