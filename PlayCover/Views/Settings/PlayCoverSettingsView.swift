@@ -12,6 +12,8 @@ struct PlayCoverSettingsView: View {
     @ObservedObject var updaterViewModel: UpdaterViewModel
     @EnvironmentObject var storeVM: StoreVM
 
+    @StateObject private var socks5VM = Socks5VM()
+
     private enum Tabs: Hashable {
         case updates, ipasource, keyCover, install, uninstall, socks5
     }
@@ -44,7 +46,7 @@ struct PlayCoverSettingsView: View {
                   Label("preferences.tab.uninstall", systemImage: "trash.square")
                 }
                 .tag(Tabs.uninstall)
-            Socks5Settings()
+            Socks5SettingsView(vm: socks5VM)
                 .tabItem {
                     Label("preferences.tab.socks5", systemImage: "network")
                 }

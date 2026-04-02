@@ -33,7 +33,7 @@ class Socks5VM: ObservableObject {
 
     // MARK: Init
 
-    private init() {
+    init() {
         isEnabled = UserDefaults.standard.bool(forKey: Socks5VM.enabledKey)
         config = Self.loadConfig()
     }
