@@ -50,6 +50,7 @@ struct AppSettingsData: Codable {
     var resizableAspectRatioWidth = 0
     var resizableAspectRatioHeight = 0
     var blockSleepSpamming = false
+    var useSocks5Proxy = false
 
     init() {}
 
@@ -90,6 +91,7 @@ struct AppSettingsData: Codable {
         resizableAspectRatioWidth = try container.decodeIfPresent(Int.self, forKey: .resizableAspectRatioWidth) ?? 0
         resizableAspectRatioHeight = try container.decodeIfPresent(Int.self, forKey: .resizableAspectRatioHeight) ?? 0
         blockSleepSpamming = try container.decodeIfPresent(Bool.self, forKey: .blockSleepSpamming) ?? false
+        useSocks5Proxy = try container.decodeIfPresent(Bool.self, forKey: .useSocks5Proxy) ?? false
     }
 }
 
