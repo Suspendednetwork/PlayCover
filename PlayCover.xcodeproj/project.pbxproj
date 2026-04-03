@@ -95,6 +95,9 @@
 		B68FD80D2ACB642100683778 /* PlayAppExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68FD80C2ACB642100683778 /* PlayAppExtensions.swift */; };
 		B6AB53C929232B4F00039B2E /* KeyCodeNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AB53C829232B4F00039B2E /* KeyCodeNames.swift */; };
 		B6ABDA2A2971EEF700A46E80 /* ProgressVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6ABDA292971EEF700A46E80 /* ProgressVM.swift */; };
+		FEBE12342FBECAFE00FEBE12 /* Socks5VM.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEBE12342FBECAFE00FEBE11 /* Socks5VM.swift */; };
+		FEBE12342FBECAFE00FEBE22 /* Socks5Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEBE12342FBECAFE00FEBE21 /* Socks5Config.swift */; };
+		FEBE12342FBECAFE00FEBE32 /* Socks5Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEBE12342FBECAFE00FEBE31 /* Socks5Settings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -207,6 +210,9 @@
 		B68FD80C2ACB642100683778 /* PlayAppExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayAppExtensions.swift; sourceTree = "<group>"; };
 		B6AB53C829232B4F00039B2E /* KeyCodeNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCodeNames.swift; sourceTree = "<group>"; };
 		B6ABDA292971EEF700A46E80 /* ProgressVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressVM.swift; sourceTree = "<group>"; };
+		FEBE12342FBECAFE00FEBE11 /* Socks5VM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socks5VM.swift; sourceTree = "<group>"; };
+		FEBE12342FBECAFE00FEBE21 /* Socks5Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socks5Config.swift; sourceTree = "<group>"; };
+		FEBE12342FBECAFE00FEBE31 /* Socks5Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socks5Settings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -238,6 +244,7 @@
 				6ED6379C28DAAAC100B506FA /* IPASourceSettings.swift */,
 				B6825C3428F3D23600E3015A /* InstallSettings.swift */,
 				ABDAD80929893EA300DC164F /* KeyCoverSettings.swift */,
+				FEBE12342FBECAFE00FEBE31 /* Socks5Settings.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -301,6 +308,7 @@
 				6E7CA16428B4D02900216CD8 /* ITunesResponse.swift */,
 				6E7CA16628B4EEAE00216CD8 /* KeymapData.swift */,
 				B6AB53C829232B4F00039B2E /* KeyCodeNames.swift */,
+				FEBE12342FBECAFE00FEBE21 /* Socks5Config.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -330,6 +338,7 @@
 				B6ABDA292971EEF700A46E80 /* ProgressVM.swift */,
 				A25930F32C49E2BC0006C91C /* PlayAppVM.swift */,
 				B67C1A122AE80A7400F396CC /* StoreAppVM.swift */,
+				FEBE12342FBECAFE00FEBE11 /* Socks5VM.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -715,6 +724,9 @@
 				B68FD80D2ACB642100683778 /* PlayAppExtensions.swift in Sources */,
 				9272F19E273B74C800DFBEF1 /* AppsVM.swift in Sources */,
 				923421F7275F40300030CD7D /* AppContainer.swift in Sources */,
+				FEBE12342FBECAFE00FEBE12 /* Socks5VM.swift in Sources */,
+				FEBE12342FBECAFE00FEBE22 /* Socks5Config.swift in Sources */,
+				FEBE12342FBECAFE00FEBE32 /* Socks5Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
