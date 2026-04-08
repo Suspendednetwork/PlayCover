@@ -81,7 +81,10 @@ struct AppLibraryView: View {
                     showSettings.toggle()
                 } label: {
                     Image(systemName: "gear")
+                        .help("playapp.settings")
+                        .foregroundStyle(.primary)
                 }
+                .buttonStyle(.borderless)
                 .disabled(selected == nil)
             }
             ToolbarItem(placement: .primaryAction) {
