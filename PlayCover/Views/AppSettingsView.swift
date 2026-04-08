@@ -886,17 +886,21 @@ extension ToggleStyle where Self == AsyncToggleStyle {
 struct NetworkView: View {
     @Binding var settings: AppSettings
     @ObservedObject private var socks5VM = Socks5VM.shared
+    @State private var useSocks5ProxyLocal: Bool = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Toggle("settings.toggle.useSocks5Proxy", isOn: $settings.settings.useSocks5Proxy)
+                    Toggle("settings.toggle.useSocks5Proxy", isOn: $useSocks5ProxyLocal)
                         .help("settings.toggle.useSocks5Proxy.help")
+                        .onChange(of: useSocks5ProxyLocal) { newValue in
+                            settings.settings.useSocks5Proxy = newValue
+                        }
                     Spacer()
                 }
 
-                if settings.settings.useSocks5Proxy {
+                if useSocks5ProxyLocal {
                     if socks5VM.config.isConfigured && socks5VM.isEnabled {
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill")
@@ -922,6 +926,9 @@ struct NetworkView: View {
                 Spacer()
             }
             .padding()
+        }
+        .onAppear {
+            useSocks5ProxyLocal = settings.settings.useSocks5Proxy
         }
     }
 }
