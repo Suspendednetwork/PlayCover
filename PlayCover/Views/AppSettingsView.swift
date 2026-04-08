@@ -377,8 +377,7 @@ struct GraphicsView: View {
                             }
                             .frame(alignment: .leading)
                             .help("settings.picker.windowFixMethod.help")
-                            .disabled(!settings.settings.inverseScreenValues)
-                            .disabled(settings.settings.resolution != 0)
+                            .disabled(!settings.settings.inverseScreenValues || settings.settings.resolution != 0)
                         }
                         Spacer()
                     }
