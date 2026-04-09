@@ -371,13 +371,17 @@ struct GraphicsView: View {
                                 }
                             Spacer()
                             // Dropdown to choose fix method
-                            Picker("", selection: $settings.settings.windowFixMethod) {
-                                Text("settings.picker.windowFixMethod.0").tag(0)
-                                Text("settings.picker.windowFixMethod.1").tag(1)
+                            if settings.settings.inverseScreenValues && settings.settings.resolution == 0 {
+                                Picker("", selection: $settings.settings.windowFixMethod) {
+                                    Text("settings.picker.windowFixMethod.0").tag(0)
+                                    Text("settings.picker.windowFixMethod.1").tag(1)
+                                }
+                                .frame(width: 150, alignment: .leading)
+                                .help("settings.picker.windowFixMethod.help")
+                                .transition(.opacity)
+                                .animation(.easeInOut(duration: 0.15), value: settings.settings.inverseScreenValues)
+                                .animation(.easeInOut(duration: 0.15), value: settings.settings.resolution)
                             }
-                            .frame(width: 150, alignment: .leading)
-                            .help("settings.picker.windowFixMethod.help")
-                            .disabled(!settings.settings.inverseScreenValues || settings.settings.resolution != 0)
                         }
                         Spacer()
                     }
