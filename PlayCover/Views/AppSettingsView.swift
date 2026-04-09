@@ -375,7 +375,6 @@ struct GraphicsView: View {
                                 Text("settings.picker.windowFixMethod.0").tag(0)
                                 Text("settings.picker.windowFixMethod.1").tag(1)
                             }
-                            .pickerStyle(.menu)
                             .frame(width: 150, alignment: .leading)
                             .help("settings.picker.windowFixMethod.help")
                             .disabled(!settings.settings.inverseScreenValues || settings.settings.resolution != 0)
