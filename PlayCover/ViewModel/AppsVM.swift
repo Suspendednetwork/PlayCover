@@ -51,16 +51,13 @@ class AppsVM: ObservableObject {
                         print("Application installed under:", sub.path)
 
                         apps.append(app)
-                        if searchText.isEmpty || app.searchText.contains(searchText.lowercased()) {
-                            filteredApps.append(app)
-                        }
                     }
                 }
             } catch {
                 print(error)
             }
 
-            filteredApps.sort(by: { $0.name.lowercased() < $1.name.lowercased() })
+            applyFilter()
 
             do {
                 if !FileManager.default.fileExists(atPath: PlayApp.bundleIDCacheURL.path),
@@ -83,6 +80,23 @@ class AppsVM: ObservableObject {
             }
 
             updatingApps = false
+        }
+    }
+
+    /// Filter the already-loaded `apps` array without rescanning the disk.
+    @MainActor
+    func filterApps() {
+        applyFilter()
+    }
+
+    @MainActor
+    private func applyFilter() {
+        if searchText.isEmpty {
+            filteredApps = apps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
+        } else {
+            filteredApps = apps
+                .filter { $0.searchText.contains(searchText.lowercased()) }
+                .sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
         }
     }
 }

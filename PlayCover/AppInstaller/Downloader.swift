@@ -79,7 +79,7 @@ class DownloadApp {
                         if url.isFileURL {
                             proceedInstall(url, deleteIPA: false)
                         } else {
-                            let (finalURL, urlIsValid) = NetworkVM.urlAccessible(url: url, popup: true)
+                            let (finalURL, urlIsValid) = await NetworkVM.urlAccessible(url: url, popup: true)
                             if urlIsValid, let newWrappedURL = finalURL {
                                 proceedDownload(newWrappedURL)
                             }
