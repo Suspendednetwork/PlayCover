@@ -60,13 +60,7 @@ final class AppIntegrity: ObservableObject {
 
             relaunch(from: destinationAppURL)
         } catch {
-            // If your project has a Log service, keep this; otherwise swap to NSLog/print.
-            if let log = (Log.shared as AnyObject?) {
-                _ = log
-                Log.shared.error(error)
-            } else {
-                NSLog("Failed to move PlayCover to ~/Applications: \(error)")
-            }
+            Log.shared.error(error)
         }
     }
 
