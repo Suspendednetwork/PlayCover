@@ -129,43 +129,30 @@ struct KeyCoverKey {
     }
 
     func encryptKeyDB() throws {
-        if let plainTextKey = KeyCover.shared.keyCoverPlainTextKey {
-            // encrypt the db file
-            let task = Process()
-            task.launchPath = "/usr/bin/openssl"
-            task.currentDirectoryPath = KeyCover.playChainPath.path
-            task.arguments = ["enc", "-aes-256-cbc", "-A",
-                                "-in", decryptedKeyDB.path,
-                                "-out", encryptedKeyDB.path,
-                                "-k", plainTextKey]
-            task.launch()
-            task.waitUntilExit()
-
-            // delete the key dbs
-            try deleteKeyDB()
-
-            Task { @MainActor in
-                KeyCoverObservable.shared.update()
-            }
+        guard let plainTextKey = KeyCover.shared.keyCoverPlainTextKey else { return }
+        let key = KeyCoverKey.symmetricKey(from: plainTextKey)
+        let plainData = try Data(contentsOf: decryptedKeyDB)
+        let sealedBox = try AES.GCM.seal(plainData, using: key)
+        guard let combined = sealedBox.combined else {
+            throw ShellError(output: "KeyCover: failed to produce sealed box for \(appBundleID)")
+        }
+        try combined.write(to: encryptedKeyDB, options: .atomic)
+        try deleteKeyDB()
+        Task { @MainActor in
+            KeyCoverObservable.shared.update()
         }
     }
 
     func decryptKeyDB() throws {
-        if let plainTextKey = KeyCover.shared.keyCoverPlainTextKey {
-            // decrypt the zip file
-            let task = Process()
-            task.launchPath = "/usr/bin/openssl"
-            task.arguments = ["enc", "-aes-256-cbc", "-A", "-d", "-in", encryptedKeyDB.path, "-out",
-                              decryptedKeyDB.path,
-                              "-k", plainTextKey]
-            task.launch()
-            task.waitUntilExit()
-            // delete the encrypted key file
-            try FileManager.default.removeItem(at: encryptedKeyDB)
-
-            Task { @MainActor in
-                KeyCoverObservable.shared.update()
-            }
+        guard let plainTextKey = KeyCover.shared.keyCoverPlainTextKey else { return }
+        let key = KeyCoverKey.symmetricKey(from: plainTextKey)
+        let encryptedData = try Data(contentsOf: encryptedKeyDB)
+        let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
+        let decryptedData = try AES.GCM.open(sealedBox, using: key)
+        try decryptedData.write(to: decryptedKeyDB, options: .atomic)
+        try FileManager.default.removeItem(at: encryptedKeyDB)
+        Task { @MainActor in
+            KeyCoverObservable.shared.update()
         }
     }
 
@@ -175,6 +162,12 @@ struct KeyCoverKey {
 
     func deleteEncryptedKeyDB() throws {
         try FileManager.default.removeItem(at: encryptedKeyDB)
+    }
+
+    private static func symmetricKey(from password: String) -> SymmetricKey {
+        let passwordData = Data(password.utf8)
+        let hash = SHA256.hash(data: passwordData)
+        return SymmetricKey(data: hash)
     }
 }
 
@@ -205,11 +198,9 @@ class KeyCoverPassword {
         }
 
         // Store the master key in macOS keychain
-        Task(priority: .userInitiated) {
-            let status = SecItemAdd(query as CFDictionary, nil)
-            if status != errSecSuccess {
-                print("Error storing master key in keychain: \(status)")
-            }
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            print("Error storing master key in keychain: \(status)")
         }
 
         KeyCover.shared.keyCoverPlainTextKey = key
@@ -253,11 +244,9 @@ class KeyCoverPassword {
                                     kSecAttrService as String: tag,
                                     kSecAttrAccount as String: tag]
 
-        Task(priority: .userInitiated) {
-            let status = SecItemDelete(query as CFDictionary)
-            if status != errSecSuccess {
-                print("Error removing master key from keychain: \(status)")
-            }
+        let removeStatus = SecItemDelete(query as CFDictionary)
+        if removeStatus != errSecSuccess {
+            print("Error removing master key from keychain: \(removeStatus)")
         }
 
         KeyCoverPreferences.shared.keyCoverEnabled = .disabled

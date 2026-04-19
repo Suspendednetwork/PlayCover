@@ -99,7 +99,7 @@ struct AppLibraryView: View {
         .searchable(text: $searchString, placement: .toolbar)
         .onChange(of: searchString, perform: { value in
             appsVM.searchText = value
-            appsVM.fetchApps()
+            appsVM.filterApps()
         })
         .onAppear {
             appsVM.searchText = ""

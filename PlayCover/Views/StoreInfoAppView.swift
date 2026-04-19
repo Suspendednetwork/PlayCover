@@ -111,9 +111,8 @@ struct StoreInfoAppView: View {
         }
         .task(priority: .background) {
             if let link = URL(string: viewModel.data.link) {
-                _ = NetworkVM.urlAccessible(url: link, popup: false) { _, available in
-                    isAvailable = available
-                }
+                let (_, available) = await NetworkVM.urlAccessible(url: link, popup: false)
+                isAvailable = available
             } else {
                 isAvailable = false
             }

@@ -183,7 +183,7 @@ class Entitlements {
         } else if let bpath = Bundle.main.path(forResource: "default", ofType: "yaml") {
             path = URL(fileURLWithPath: bpath)
         } else {
-            throw "Default config not found: default.yaml"
+            throw ShellError(output: "Default config not found: default.yaml")
         }
 
         do {
@@ -193,7 +193,7 @@ class Entitlements {
             return decoded
         } catch {
             print("failed to get default rules at \(path): \(error)")
-            throw "failed to get default rules at \(path): \(error)"
+            throw ShellError(output: "failed to get default rules at \(path): \(error)")
         }
     }
 

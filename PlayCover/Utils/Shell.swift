@@ -26,7 +26,7 @@ class Shell: ObservableObject {
         process.waitUntilExit()
         let status = process.terminationStatus
         if status != 0 {
-            throw String(data: output, encoding: .utf8) ?? "Shell error occured"
+            throw ShellError(output: String(data: output, encoding: .utf8) ?? "Shell error occured")
         }
         return String(data: output, encoding: .utf8) ?? "Shell error occured"
     }
@@ -110,7 +110,7 @@ class Shell: ObservableObject {
                 if let error = possibleError {
                     for key in error.allKeys {
                         if let key = key as? String {
-                            throw error.value(forKey: key).debugDescription
+                            throw ShellError(output: error.value(forKey: key).debugDescription)
                         }
                     }
                 }
@@ -121,8 +121,7 @@ class Shell: ObservableObject {
     }
 }
 
-extension Swift.String: Swift.Error { }
-
-extension Swift.String: Foundation.LocalizedError {
-    public var errorDescription: String? { self }
+struct ShellError: LocalizedError {
+    let output: String
+    var errorDescription: String? { output }
 }
