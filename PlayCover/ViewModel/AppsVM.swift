@@ -84,12 +84,12 @@ class AppsVM: ObservableObject {
     }
 
     /// Filter the already-loaded `apps` array without rescanning the disk.
+    @MainActor
     func filterApps() {
-        Task { @MainActor in
-            applyFilter()
-        }
+        applyFilter()
     }
 
+    @MainActor
     private func applyFilter() {
         if searchText.isEmpty {
             filteredApps = apps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
