@@ -170,19 +170,6 @@ which binary was resolved (embedded vs. system).
 
 
 
-<!-- LICENSE -->
-## License
-
-Distributed under the GPLv3 License. See `LICENSE` for more information.
-
-
-
-<!-- CONTACT -->
-## Contact
-
-Lucas Lee - playcover@lucas.icu
-
-Depal - depal@playcover.io
 
 
 
