@@ -17,7 +17,7 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">PlayCover</h3>
+  <h3 align="center">PlayCove</h3>
 
   <p align="center">
     Run iOS apps and games on Apple Silicon Macs with mouse, keyboard and controller support.
