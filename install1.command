@@ -5,11 +5,11 @@ echo "🚀 Roblox MacPlayer Installer for PlayCover"
 echo ""
 
 # Clean up
-rm -rf /tmp/RobloxExtract 2>/dev/null || true
-rm -f /tmp/roblox*.dmg /tmp/roblox*.zip 2>/dev/null || true
+rm -rf /tmp/RobloxSetup 2>/dev/null || true
+rm -f /tmp/roblox* 2>/dev/null || true
 
-# Step 1: Get version
-echo "Fetching latest Roblox version..."
+# Step 1: Get version from official API
+echo "Fetching Roblox version..."
 ROBLOX_VERSION=$(curl -fsSL "https://clientsettings.roblox.com/v2/client-version/MacPlayer/channel/LIVE" | python3 -c "import sys, json; print(json.load(sys.stdin)['clientVersionUpload'])")
 
 if [ -z "$ROBLOX_VERSION" ]; then
@@ -19,74 +19,85 @@ fi
 
 echo "✓ Version: $ROBLOX_VERSION"
 
-# Step 2: Download DMG
-echo "Downloading Roblox MacPlayer from CDN..."
+# Step 2: Try direct CDN URLs based on version
+# RDD uses format: https://setup.rbxcdn.com/mac/version-{hash}-RobloxPlayer.zip
+# But also try simpler patterns
 
-DMG_FILE=""
+echo ""
+echo "Downloading from CDN (this may take a minute or two)..."
 
-# Try to download from direct CDN URL
-if curl -L --fail --max-time 300 -o /tmp/roblox.dmg \
-    "https://setup.rbxcdn.com/mac/Roblox.dmg" 2>/dev/null && \
-    [ -s /tmp/roblox.dmg ]; then
+DOWNLOAD_OK=0
+DL_FILE=""
+
+# Try patterns (with retry)
+URLS=(
+    "https://setup.rbxcdn.com/mac/${ROBLOX_VERSION}-RobloxPlayer.zip"
+    "https://setup.rbxcdn.com/mac/version-${ROBLOX_VERSION#version-}-RobloxPlayer.zip"
+    "https://setup.rbxcdn.com/mac/Roblox.zip"
+    "https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&compressZip=1"
+)
+
+for URL in "${URLS[@]}"; do
+    echo "Trying: $URL"
     
-    if file /tmp/roblox.dmg | grep -q "Apple"; then
-        echo "✓ Downloaded DMG successfully"
-        DMG_FILE="/tmp/roblox.dmg"
+    if timeout 120 curl -L --fail --max-time 120 \
+        -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
+        -o /tmp/roblox_download.zip "$URL" 2>/dev/null; then
+        
+        # Check if it's actually a ZIP
+        if file /tmp/roblox_download.zip | grep -q "Zip archive"; then
+            SIZE=$(du -h /tmp/roblox_download.zip | cut -f1)
+            echo "✓ Downloaded ($SIZE)"
+            DOWNLOAD_OK=1
+            DL_FILE="/tmp/roblox_download.zip"
+            break
+        else
+            FILE_TYPE=$(file /tmp/roblox_download.zip | cut -d: -f2 | xargs)
+            echo "✗ Invalid file type: $FILE_TYPE"
+            rm -f /tmp/roblox_download.zip
+        fi
+    else
+        echo "✗ Download failed or timed out"
+        rm -f /tmp/roblox_download.zip
     fi
-fi
+done
 
-# If DMG failed, the file might be HTML (403 error page)
-if [ -z "$DMG_FILE" ] && [ -f /tmp/roblox.dmg ]; then
-    echo "⚠️ Download returned non-DMG file, checking content..."
-    HEAD=$(head -c 100 /tmp/roblox.dmg)
-    if echo "$HEAD" | grep -q "html\|<!DOCTYPE"; then
-        echo "Got HTML response (403 or redirect). Download is blocked."
-    fi
-    rm -f /tmp/roblox.dmg
-fi
-
-# If direct CDN didn't work, nothing will - RDD is browser-only
-if [ -z "$DMG_FILE" ]; then
+if [ "$DOWNLOAD_OK" -ne 1 ]; then
     echo ""
-    echo "❌ Download failed. The Roblox CDN requires browser access."
+    echo "❌ Direct download failed. Trying RDD web interface..."
     echo ""
-    echo "MANUAL FIX: Use RDD (browser) to download:"
-    echo "  1. Visit: https://rdd.latte.to/"
-    echo "  2. Set binaryType to 'MacPlayer'"
-    echo "  3. Click Download"
-    echo "  4. Extract the ZIP to ~/Applications/Roblox-version.app"
+    echo "Follow these steps:"
+    echo "  1. Open: https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
+    echo "  2. Click 'Download' button"
+    echo "  3. Once downloaded, run:"
+    echo "     bash ~/setup_roblox.sh ~/Downloads/Roblox.zip"
     echo ""
-    echo "Or download official Roblox from: https://www.roblox.com/download"
     exit 1
 fi
 
-# Step 3: Mount DMG and extract
-echo "Mounting DMG..."
-MOUNT_POINT=$(/usr/bin/mktemp -d)
-hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_POINT" -nobrowse >/dev/null 2>&1
-
-EXTRACT_DIR="/tmp/RobloxExtract"
+# Step 3: Extract
+EXTRACT_DIR="/tmp/RobloxSetup"
 mkdir -p "$EXTRACT_DIR"
 
-# Find and copy the .app
-APP_FOUND=$(find "$MOUNT_POINT" -maxdepth 2 -name "*.app" -type d | head -1)
+echo ""
+echo "Extracting..."
+unzip -q "$DL_FILE" -d "$EXTRACT_DIR"
 
-if [ -z "$APP_FOUND" ]; then
-    echo "❌ No .app bundle found in DMG"
-    hdiutil detach "$MOUNT_POINT" 2>/dev/null || true
+# Find .app
+APP=$(find "$EXTRACT_DIR" -name "*.app" -type d | head -1)
+
+if [ -z "$APP" ]; then
+    echo "❌ No .app bundle found"
+    echo "Contents:"
+    find "$EXTRACT_DIR" -type f | head -20
     exit 1
 fi
 
-echo "✓ Found app: $(basename "$APP_FOUND")"
-cp -r "$APP_FOUND" "$EXTRACT_DIR/"
+echo "✓ Found app: $(basename "$APP")"
+echo ""
 
-hdiutil detach "$MOUNT_POINT" 2>/dev/null || true
-rm -rf "$MOUNT_POINT"
-
-# Step 4: Modify app
-APP="$EXTRACT_DIR/$(basename "$APP_FOUND")"
-
-echo "Modifying app bundle..."
+# Step 4: Modify
+echo "Modifying app..."
 
 MACOS_DIR="$APP/Contents/MacOS"
 
@@ -113,7 +124,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
-    <string>ROBLOX_VERSION</string>
+    <string>ROBLOX_VER</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.13</string>
     <key>NSMicrophoneUsageDescription</key>
@@ -124,7 +135,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-sed -i '' "s/ROBLOX_VERSION/Roblox-$ROBLOX_VERSION/" "$APP/Contents/Info.plist"
+sed -i '' "s/ROBLOX_VER/Roblox-$ROBLOX_VERSION/" "$APP/Contents/Info.plist"
 
 # Step 5: Code sign
 echo "Code signing..."
@@ -143,14 +154,17 @@ FINAL_PATH="$INSTALL_DIR/$APP_NAME"
 echo "Installing to $FINAL_PATH..."
 mv "$APP" "$FINAL_PATH"
 
-rm -f "$DMG_FILE"
+# Cleanup
+rm -f "$DL_FILE"
 rm -rf "$EXTRACT_DIR"
 
 echo ""
-echo "============================================================"
+echo "════════════════════════════════════════════════════════════"
 echo "✅ Installation complete!"
-echo "============================================================"
+echo "════════════════════════════════════════════════════════════"
+echo ""
 echo "Installed at: $FINAL_PATH"
 echo ""
-echo "To run: open \"$FINAL_PATH\""
+echo "To run:"
+echo "  open \"$FINAL_PATH\""
 echo ""
