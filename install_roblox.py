@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Roblox MacPlayer Installer for PlayCover
-Uses RDD (Roblox Deployment Downloader) API via Selenium/headless browser simulation
+Uses RDD (Roblox Deployment Downloader) API
 Falls back to direct CDN if available
+SSL certificate verification disabled for compatibility
 """
 
 import os
@@ -13,8 +14,12 @@ import urllib.request
 import urllib.error
 import shutil
 import tempfile
+import ssl
 from pathlib import Path
 from typing import Optional
+
+# Disable SSL verification for environments with certificate issues
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class RobloxInstaller:
     def __init__(self, debug: bool = False):
@@ -66,19 +71,13 @@ class RobloxInstaller:
             self.log(f"Failed to fetch version: {e}", "ERROR")
             raise
     
-    def get_download_url_from_rdd(self) -> Optional[str]:
+    def get_download_url_from_rdd(self) -> Optional[bytes]:
         """
         Use RDD's URL generator pattern
         RDD constructs URLs by fetching manifests from Roblox CDN
         We'll simulate the same process
         """
         self.log("Attempting to resolve download URL via RDD pattern...")
-        
-        # RDD queries the Roblox manifest system
-        # For MacPlayer, the pattern is typically:
-        # 1. Query setup.rbxcdn.com for available versions
-        # 2. Find the MacPlayer deployment
-        # 3. Construct direct download link
         
         try:
             # Try the RDD endpoint directly with proper headers
