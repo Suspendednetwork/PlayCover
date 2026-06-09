@@ -20,8 +20,8 @@ fi
 echo "✓ Version: $ROBLOX_VERSION"
 
 # Step 2: Try direct CDN URLs based on version
-# RDD uses format: https://setup.rbxcdn.com/mac/version-{hash}-RobloxPlayer.zip
-# But also try simpler patterns
+# ROBLOX_VERSION format: "version-b6bc8a3f6c184e6f"
+# URL format should be: https://setup.rbxcdn.com/mac/version-b6bc8a3f6c184e6f-RobloxPlayer.zip
 
 echo ""
 echo "Downloading from CDN (this may take a minute or two)..."
@@ -32,7 +32,6 @@ DL_FILE=""
 # Try patterns (with retry)
 URLS=(
     "https://setup.rbxcdn.com/mac/${ROBLOX_VERSION}-RobloxPlayer.zip"
-    "https://setup.rbxcdn.com/mac/version-${ROBLOX_VERSION#version-}-RobloxPlayer.zip"
     "https://setup.rbxcdn.com/mac/Roblox.zip"
     "https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&compressZip=1"
 )
@@ -64,7 +63,7 @@ done
 
 if [ "$DOWNLOAD_OK" -ne 1 ]; then
     echo ""
-    echo "❌ Direct download failed. Trying RDD web interface..."
+    echo "❌ Direct download failed. Using RDD web interface..."
     echo ""
     echo "Follow these steps:"
     echo "  1. Open: https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
@@ -124,7 +123,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
-    <string>ROBLOX_VER</string>
+    <string>Roblox-ROBLOX_VER</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.13</string>
     <key>NSMicrophoneUsageDescription</key>
@@ -135,7 +134,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-sed -i '' "s/ROBLOX_VER/Roblox-$ROBLOX_VERSION/" "$APP/Contents/Info.plist"
+sed -i '' "s/ROBLOX_VER/${ROBLOX_VERSION}/" "$APP/Contents/Info.plist"
 
 # Step 5: Code sign
 echo "Code signing..."
@@ -146,7 +145,7 @@ codesign --force --deep --sign - --timestamp=none "$APP" 2>/dev/null || true
 INSTALL_DIR="$HOME/Applications"
 mkdir -p "$INSTALL_DIR"
 
-APP_NAME="Roblox-$ROBLOX_VERSION.app"
+APP_NAME="Roblox-${ROBLOX_VERSION}.app"
 FINAL_PATH="$INSTALL_DIR/$APP_NAME"
 
 [ -d "$FINAL_PATH" ] && rm -rf "$FINAL_PATH"
