@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-# --- ROBLOX VERSION FROM OFFICIAL API ---
+# --- CLEAN OLD RUN ARTIFACTS ---
+rm -rf RobloxExtract 2>/dev/null || true
+rm -f /tmp/roblox* 2>/dev/null || true
+
 echo "Fetching latest Roblox version..."
 
 ROBLOX_VERSION=$(
@@ -25,7 +28,10 @@ SOURCES=(
 "https://rdd.weao.xyz/?channel=LIVE&binaryType=MacPlayer&includeLauncher=true&parallelDownloads=true"
 )
 
-ZIP_FILE=$(mktemp /tmp/roblox.XXXXXX.zip)
+# --- SAFE TEMP FILE (FIXED MKTEMP) ---
+TMP_FILE=$(mktemp /tmp/roblox.XXXXXX)
+ZIP_FILE="${TMP_FILE}.zip"
+mv "$TMP_FILE" "$ZIP_FILE"
 
 DOWNLOAD_OK=0
 
@@ -130,9 +136,11 @@ mkdir -p "$INSTALL_DIR"
 
 FINAL_PATH="$INSTALL_DIR/$APP_VERSION.app"
 
+# remove old version if exists
+rm -rf "$FINAL_PATH"
+
 echo "Installing to $FINAL_PATH..."
 
-rm -rf "$FINAL_PATH"
 mv "$APP" "$FINAL_PATH"
 
 echo "Done."
