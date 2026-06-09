@@ -25,7 +25,7 @@ if [ "$(uname -m)" = "x86_64" ]; then
     ARCH="x86-64"
 fi
 
-# --- BUILD DOWNLOAD URL (FIXED) ---
+# --- BUILD DOWNLOAD URL ---
 DOWNLOAD_URL="https://setup-aws.rbxcdn.com/mac/${ARCH}/${ROBLOX_VERSION}-RobloxPlayer.zip"
 
 echo "Downloading from:"
@@ -55,11 +55,67 @@ fi
 
 echo "Found app: $APP"
 
-# --- INSTALL TO APPLICATIONS ---
+# =========================
+# PATCH SECTION
+# =========================
+
+echo "Removing signature..."
+codesign --remove-signature "$APP" 2>/dev/null || true
+
+MACOS_DIR="$APP/Contents/MacOS"
+PLIST="$APP/Contents/Info.plist"
+
+echo "Renaming binaries..."
+
+if [ -f "$MACOS_DIR/RobloxPlayer" ]; then
+    mv "$MACOS_DIR/RobloxPlayer" "$MACOS_DIR/r"
+fi
+
+if [ -f "$MACOS_DIR/RobloxPlayerInstaller" ]; then
+    mv "$MACOS_DIR/RobloxPlayerInstaller" "$MACOS_DIR/ro"
+fi
+
+echo "Editing Info.plist..."
+
+# CFBundleExecutable -> r
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable r" "$PLIST" 2>/dev/null || \
+/usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string r" "$PLIST"
+
+# CFBundleIdentifier -> leo.nel.com
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier leo.nel.com" "$PLIST" 2>/dev/null || \
+/usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string leo.nel.com" "$PLIST"
+
+echo "Re-signing (ad-hoc)..."
+codesign --force --deep --sign - "$APP"
+
+echo "Verifying signature..."
+codesign --verify --deep --strict "$APP" || true
+
+# --- INSTALL ---
 INSTALL_DIR="$HOME/Applications"
 mkdir -p "$INSTALL_DIR"
 
-rm -rf "$INSTALL_DIR/Roblox.app"
-mv "$APP" "$INSTALL_DIR/Roblox.app"
+APP_NAME="Roblox.app"
+FINAL_APP_PATH="$INSTALL_DIR/$APP_NAME"
 
-echo "Installed successfully to $INSTALL_DIR/Roblox.app"
+rm -rf "$FINAL_APP_PATH"
+mv "$APP" "$FINAL_APP_PATH"
+
+echo "Installed successfully to $FINAL_APP_PATH"
+
+# =========================
+# LAUNCHER CREATION
+# =========================
+
+echo "Creating launch_r shortcut..."
+
+LAUNCHER="$INSTALL_DIR/launch_r"
+
+cat > "$LAUNCHER" <<EOF
+#!/bin/bash
+exec "$FINAL_APP_PATH/Contents/MacOS/r" "\$@"
+EOF
+
+chmod +x "$LAUNCHER"
+
+echo "Launcher created at: $LAUNCHER"
