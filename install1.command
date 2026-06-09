@@ -19,28 +19,25 @@ fi
 
 echo "✓ Version: $ROBLOX_VERSION"
 
-# Step 2: Try direct CDN URLs based on version
-# ROBLOX_VERSION format: "version-b6bc8a3f6c184e6f"
-# URL format should be: https://setup.rbxcdn.com/mac/version-b6bc8a3f6c184e6f-RobloxPlayer.zip
-
+# Step 2: Try direct CDN URLs
 echo ""
-echo "Downloading from CDN (this may take a minute or two)..."
+echo "Downloading from CDN..."
 
 DOWNLOAD_OK=0
 DL_FILE=""
 
-# Try patterns (with retry)
+# Try patterns
 URLS=(
     "https://setup.rbxcdn.com/mac/${ROBLOX_VERSION}-RobloxPlayer.zip"
     "https://setup.rbxcdn.com/mac/Roblox.zip"
-    "https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&compressZip=1"
 )
 
 for URL in "${URLS[@]}"; do
     echo "Trying: $URL"
     
-    if timeout 120 curl -L --fail --max-time 120 \
+    if timeout 180 curl -L --fail --max-time 180 \
         -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
+        --progress-bar \
         -o /tmp/roblox_download.zip "$URL" 2>/dev/null; then
         
         # Check if it's actually a ZIP
@@ -56,20 +53,17 @@ for URL in "${URLS[@]}"; do
             rm -f /tmp/roblox_download.zip
         fi
     else
-        echo "✗ Download failed or timed out"
+        echo "✗ Download failed"
         rm -f /tmp/roblox_download.zip
     fi
 done
 
 if [ "$DOWNLOAD_OK" -ne 1 ]; then
     echo ""
-    echo "❌ Direct download failed. Using RDD web interface..."
+    echo "❌ Download failed"
     echo ""
-    echo "Follow these steps:"
-    echo "  1. Open: https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
-    echo "  2. Click 'Download' button"
-    echo "  3. Once downloaded, run:"
-    echo "     bash ~/setup_roblox.sh ~/Downloads/Roblox.zip"
+    echo "The Roblox CDN may be temporarily unavailable."
+    echo "Try again in a few moments."
     echo ""
     exit 1
 fi
@@ -87,8 +81,6 @@ APP=$(find "$EXTRACT_DIR" -name "*.app" -type d | head -1)
 
 if [ -z "$APP" ]; then
     echo "❌ No .app bundle found"
-    echo "Contents:"
-    find "$EXTRACT_DIR" -type f | head -20
     exit 1
 fi
 
