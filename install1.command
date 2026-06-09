@@ -1,12 +1,21 @@
 #!/bin/bash
 set -e
 
-ARCH=$(uname -m)
+echo "Select Roblox download source:"
+echo "1) rdd.latte.to (default)"
+echo "2) rdd.latte.to (x86-64)"
+echo "3) rdd.weao.xyz (alternative)"
+read -rp "Enter choice (1-3): " CHOICE
 
-if [ "$ARCH" = "x86_64" ]; then
-    DOWNLOAD_URL="https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&arch=x86-64"
-else
+if [ "$CHOICE" = "1" ]; then
     DOWNLOAD_URL="https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
+elif [ "$CHOICE" = "2" ]; then
+    DOWNLOAD_URL="https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&arch=x86-64"
+elif [ "$CHOICE" = "3" ]; then
+    DOWNLOAD_URL="https://rdd.weao.xyz/?channel=LIVE&binaryType=MacPlayer&includeLauncher=true&parallelDownloads=true"
+else
+    echo "Invalid choice. Exiting."
+    exit 1
 fi
 
 echo "Downloading Roblox..."
