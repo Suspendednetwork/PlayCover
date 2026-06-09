@@ -20,24 +20,24 @@ fi
 
 echo "Downloading Roblox..."
 
-curl -L --fail --show-error "$DOWNLOAD_URL" -o Roblox.zip
+ZIP_FILE=$(mktemp /tmp/roblox.XXXXXX.zip)
+
+curl -L --fail --show-error "$DOWNLOAD_URL" -o "$ZIP_FILE"
 
 echo "Checking file type..."
 
-FILE_TYPE=$(file Roblox.zip)
+FILE_TYPE=$(file "$ZIP_FILE")
 echo "$FILE_TYPE"
 
-# --- IMPORTANT SAFETY CHECK ---
 if ! echo "$FILE_TYPE" | grep -q "Zip archive data"; then
     echo "ERROR: Download is not a valid ZIP file."
-    echo "Most likely the URL returned HTML or an error page."
     exit 1
 fi
 
 echo "Extracting..."
 rm -rf RobloxExtract
 mkdir -p RobloxExtract
-unzip -q Roblox.zip -d RobloxExtract
+unzip -q "$ZIP_FILE" -d RobloxExtract
 
 APP=$(find RobloxExtract -name "*.app" | head -n 1)
 
@@ -47,6 +47,12 @@ if [ -z "$APP" ]; then
 fi
 
 echo "Found: $APP"
+
+# --- VERSION DETECTION ---
+VERSION_HASH=$(basename "$ZIP_FILE" | grep -oE '[a-f0-9]{6,}' || echo "unknown")
+APP_VERSION="Roblox-$VERSION_HASH"
+
+echo "Detected version: $APP_VERSION"
 
 # Rename binaries safely
 if [ -f "$APP/Contents/MacOS/RobloxPlayer" ]; then
@@ -76,7 +82,7 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 	<string>APPL</string>
 
 	<key>CFBundleVersion</key>
-	<string>7240735</string>
+	<string>VERSION_PLACEHOLDER</string>
 
 	<key>LSMinimumSystemVersion</key>
 	<string>10.13</string>
@@ -90,6 +96,9 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 </plist>
 EOF
 
+# inject version into plist
+sed -i '' "s/VERSION_PLACEHOLDER/$APP_VERSION/" "$APP/Contents/Info.plist"
+
 # --- CODE SIGNING ---
 
 echo "Removing old signature..."
@@ -101,17 +110,17 @@ codesign --force --deep --sign - "$APP"
 echo "Verifying signature..."
 codesign --verify --deep --strict "$APP"
 
-# --- INSTALL STEP ---
+# --- INSTALL STEP (VERSIONED) ---
 
 INSTALL_DIR="$HOME/Applications"
 mkdir -p "$INSTALL_DIR"
 
-APP_NAME=$(basename "$APP")
+FINAL_PATH="$INSTALL_DIR/$APP_VERSION.app"
 
-echo "Installing to $INSTALL_DIR/$APP_NAME..."
+echo "Installing to $FINAL_PATH..."
 
-rm -rf "$INSTALL_DIR/$APP_NAME"
-mv "$APP" "$INSTALL_DIR/"
+rm -rf "$FINAL_PATH"
+mv "$APP" "$FINAL_PATH"
 
 echo "Done."
-echo "Installed at: $INSTALL_DIR/$APP_NAME"
+echo "Installed at: $FINAL_PATH"
