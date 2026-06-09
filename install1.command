@@ -19,8 +19,14 @@ echo "Detected version: $ROBLOX_VERSION"
 # --- CLEAN ---
 rm -rf Roblox.app RobloxExtract /tmp/roblox.zip
 
-# --- BUILD DOWNLOAD URL (REAL CDN METHOD) ---
-DOWNLOAD_URL="https://setup.rbxcdn.com/mac/$ROBLOX_VERSION-RobloxMac.zip"
+# --- ARCH DETECTION ---
+ARCH="arm64"
+if [ "$(uname -m)" = "x86_64" ]; then
+    ARCH="x86-64"
+fi
+
+# --- BUILD DOWNLOAD URL (FIXED) ---
+DOWNLOAD_URL="https://setup-aws.rbxcdn.com/mac/${ARCH}/${ROBLOX_VERSION}-RobloxPlayer.zip"
 
 echo "Downloading from:"
 echo "$DOWNLOAD_URL"
@@ -36,6 +42,7 @@ if ! echo "$FILE_TYPE" | grep -q "Zip archive data"; then
 fi
 
 # --- EXTRACT ---
+rm -rf RobloxExtract
 mkdir -p RobloxExtract
 unzip -q /tmp/roblox.zip -d RobloxExtract
 
