@@ -1,39 +1,61 @@
 #!/bin/bash
 set -e
 
-echo "Select Roblox download source:"
-echo "1) rdd.latte.to (default)"
-echo "2) rdd.latte.to (x86-64)"
-echo "3) rdd.weao.xyz (alternative)"
-read -rp "Enter choice (1-3): " CHOICE
+# --- ROBLOX VERSION FROM OFFICIAL API ---
+echo "Fetching latest Roblox version..."
 
-if [ "$CHOICE" = "1" ]; then
-    DOWNLOAD_URL="https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
-elif [ "$CHOICE" = "2" ]; then
-    DOWNLOAD_URL="https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&arch=x86-64"
-elif [ "$CHOICE" = "3" ]; then
-    DOWNLOAD_URL="https://rdd.weao.xyz/?channel=LIVE&binaryType=MacPlayer&includeLauncher=true&parallelDownloads=true"
-else
-    echo "Invalid choice. Exiting."
+ROBLOX_VERSION=$(
+curl -fsSL "https://clientsettings.roblox.com/v2/client-version/MacPlayer/channel/LIVE" \
+| python3 -c "import sys, json; print(json.load(sys.stdin)['clientVersionUpload'])"
+)
+
+if [ -z "$ROBLOX_VERSION" ]; then
+    echo "ERROR: Failed to fetch Roblox version."
     exit 1
 fi
 
-echo "Downloading Roblox..."
+echo "Detected Roblox version: $ROBLOX_VERSION"
+
+APP_VERSION="Roblox-$ROBLOX_VERSION"
+
+# --- DOWNLOAD SOURCES (FALLBACK ORDER) ---
+SOURCES=(
+"https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer"
+"https://rdd.latte.to/?channel=LIVE&binaryType=MacPlayer&arch=x86-64"
+"https://rdd.weao.xyz/?channel=LIVE&binaryType=MacPlayer&includeLauncher=true&parallelDownloads=true"
+)
 
 ZIP_FILE=$(mktemp /tmp/roblox.XXXXXX.zip)
 
-curl -L --fail --show-error "$DOWNLOAD_URL" -o "$ZIP_FILE"
+DOWNLOAD_OK=0
 
-echo "Checking file type..."
+for URL in "${SOURCES[@]}"; do
+    echo ""
+    echo "Trying source:"
+    echo "$URL"
 
-FILE_TYPE=$(file "$ZIP_FILE")
-echo "$FILE_TYPE"
+    curl -L --fail --show-error \
+        -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36" \
+        "$URL" -o "$ZIP_FILE"
 
-if ! echo "$FILE_TYPE" | grep -q "Zip archive data"; then
-    echo "ERROR: Download is not a valid ZIP file."
+    FILE_TYPE=$(file "$ZIP_FILE")
+    echo "$FILE_TYPE"
+
+    if echo "$FILE_TYPE" | grep -q "Zip archive data"; then
+        echo "Valid ZIP downloaded."
+        DOWNLOAD_OK=1
+        break
+    else
+        echo "Invalid response (not ZIP). Trying next source..."
+    fi
+done
+
+if [ "$DOWNLOAD_OK" -ne 1 ]; then
+    echo "ERROR: All download sources failed."
     exit 1
 fi
 
+# --- EXTRACT ---
 echo "Extracting..."
 rm -rf RobloxExtract
 mkdir -p RobloxExtract
@@ -48,13 +70,7 @@ fi
 
 echo "Found: $APP"
 
-# --- VERSION DETECTION ---
-VERSION_HASH=$(basename "$ZIP_FILE" | grep -oE '[a-f0-9]{6,}' || echo "unknown")
-APP_VERSION="Roblox-$VERSION_HASH"
-
-echo "Detected version: $APP_VERSION"
-
-# Rename binaries safely
+# --- RENAME BINARIES ---
 if [ -f "$APP/Contents/MacOS/RobloxPlayer" ]; then
     mv "$APP/Contents/MacOS/RobloxPlayer" "$APP/Contents/MacOS/r"
 fi
@@ -63,7 +79,7 @@ if [ -f "$APP/Contents/MacOS/RobloxPlayerInstaller" ]; then
     mv "$APP/Contents/MacOS/RobloxPlayerInstaller" "$APP/Contents/MacOS/r-installer"
 fi
 
-# Replace Info.plist
+# --- INFO PLIST ---
 cat > "$APP/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -96,11 +112,9 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 </plist>
 EOF
 
-# inject version into plist
 sed -i '' "s/VERSION_PLACEHOLDER/$APP_VERSION/" "$APP/Contents/Info.plist"
 
 # --- CODE SIGNING ---
-
 echo "Removing old signature..."
 codesign --remove-signature "$APP" 2>/dev/null || true
 
@@ -110,8 +124,7 @@ codesign --force --deep --sign - "$APP"
 echo "Verifying signature..."
 codesign --verify --deep --strict "$APP"
 
-# --- INSTALL STEP (VERSIONED) ---
-
+# --- INSTALL ---
 INSTALL_DIR="$HOME/Applications"
 mkdir -p "$INSTALL_DIR"
 
