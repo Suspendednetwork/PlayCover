@@ -95,7 +95,7 @@ codesign --verify --deep --strict "$APP" || true
 INSTALL_DIR="$HOME/Applications"
 mkdir -p "$INSTALL_DIR"
 
-APP_NAME="Roblox.app"
+APP_NAME="r.app"
 FINAL_APP_PATH="$INSTALL_DIR/$APP_NAME"
 
 rm -rf "$FINAL_APP_PATH"
