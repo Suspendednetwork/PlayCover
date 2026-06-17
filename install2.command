@@ -5,13 +5,13 @@ echo "Fetching Roblox MacPlayer version..."
 
 # --- GET VERSION HASH ---
 ROBLOX_VERSION=$(
-  curl -fsSL "https://clientsettingscdn.roblox.com/v2/client-version/MacPlayer/channel/zbuck2release-725" \
-  | python3 -c "import sys, json; print(json.load(sys.stdin)['clientVersionUpload'])"
+curl -fsSL "https://clientsettings.roblox.com/v2/client-version/MacPlayer/channel/LIVE" \
+| python3 -c "import sys, json; print(json.load(sys.stdin)['clientVersionUpload'])"
 )
 
 if [ -z "$ROBLOX_VERSION" ]; then
-  echo "Failed to fetch Roblox version"
-  exit 1
+    echo "Failed to fetch Roblox version"
+    exit 1
 fi
 
 echo "Detected version: $ROBLOX_VERSION"
@@ -22,7 +22,7 @@ rm -rf Roblox.app RobloxExtract /tmp/roblox.zip
 # --- ARCH DETECTION ---
 ARCH="arm64"
 if [ "$(uname -m)" = "x86_64" ]; then
-  ARCH="x86-64"
+    ARCH="x86-64"
 fi
 
 # --- BUILD DOWNLOAD URL ---
@@ -37,8 +37,8 @@ curl -L --fail --show-error "$DOWNLOAD_URL" -o /tmp/roblox.zip
 FILE_TYPE=$(file /tmp/roblox.zip)
 
 if ! echo "$FILE_TYPE" | grep -q "Zip archive data"; then
-  echo "ERROR: Download is not a valid ZIP (got HTML instead)"
-  exit 1
+    echo "ERROR: Download is not a valid ZIP (got HTML instead)"
+    exit 1
 fi
 
 # --- EXTRACT ---
@@ -49,8 +49,8 @@ unzip -q /tmp/roblox.zip -d RobloxExtract
 APP=$(find RobloxExtract -name "*.app" | head -n 1)
 
 if [ -z "$APP" ]; then
-  echo "Could not find Roblox app"
-  exit 1
+    echo "Could not find Roblox app"
+    exit 1
 fi
 
 echo "Found app: $APP"
@@ -65,14 +65,21 @@ codesign --remove-signature "$APP" 2>/dev/null || true
 MACOS_DIR="$APP/Contents/MacOS"
 PLIST="$APP/Contents/Info.plist"
 
+echo "Cleaning RobloxPlayerInstaller contents..."
+
+INSTALLER_PATH="$MACOS_DIR/RobloxPlayerInstaller"
+if [ -d "$INSTALLER_PATH" ]; then
+    find "$INSTALLER_PATH" -mindepth 1 -delete
+fi
+
 echo "Renaming binaries..."
 
 if [ -f "$MACOS_DIR/RobloxPlayer" ]; then
-  mv "$MACOS_DIR/RobloxPlayer" "$MACOS_DIR/r"
+    mv "$MACOS_DIR/RobloxPlayer" "$MACOS_DIR/r"
 fi
 
 if [ -f "$MACOS_DIR/RobloxPlayerInstaller" ]; then
-  mv "$MACOS_DIR/RobloxPlayerInstaller" "$MACOS_DIR/ro"
+    mv "$MACOS_DIR/RobloxPlayerInstaller" "$MACOS_DIR/ro"
 fi
 
 echo "Editing Info.plist..."
