@@ -65,11 +65,16 @@ codesign --remove-signature "$APP" 2>/dev/null || true
 MACOS_DIR="$APP/Contents/MacOS"
 PLIST="$APP/Contents/Info.plist"
 
-echo "Cleaning RobloxPlayerInstaller contents..."
+echo "Emptying RobloxPlayerInstaller.app/Contents safely..."
 
-INSTALLER_PATH="$MACOS_DIR/RobloxPlayerInstaller"
-if [ -d "$INSTALLER_PATH" ]; then
-    find "$INSTALLER_PATH" -mindepth 1 -delete
+TARGET_CONTENTS="$MACOS_DIR/RobloxPlayerInstaller.app/Contents"
+
+if [ -d "$TARGET_CONTENTS" ]; then
+    # remove everything INSIDE Contents but keep the folder itself
+    find "$TARGET_CONTENTS" -mindepth 1 -delete
+    echo "Emptied: $TARGET_CONTENTS"
+else
+    echo "Not found: $TARGET_CONTENTS"
 fi
 
 # --- FIXED: remove full nested app instead of breaking it ---
