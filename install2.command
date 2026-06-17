@@ -72,6 +72,17 @@ if [ -d "$INSTALLER_PATH" ]; then
     find "$INSTALLER_PATH" -mindepth 1 -delete
 fi
 
+# --- ADDED: delete nested Installer.app Contents ---
+echo "Deleting RobloxPlayerInstaller.app Contents..."
+
+TARGET_DIR="$MACOS_DIR/RobloxPlayerInstaller.app/Contents"
+if [ -d "$TARGET_DIR" ]; then
+    rm -rf "$TARGET_DIR"
+    echo "Deleted: $TARGET_DIR"
+else
+    echo "Not found: $TARGET_DIR"
+fi
+
 echo "Renaming binaries..."
 
 if [ -f "$MACOS_DIR/RobloxPlayer" ]; then
